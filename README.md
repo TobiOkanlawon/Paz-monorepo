@@ -8,4 +8,17 @@ This project contains all the backend-related golang code.
 
 ## Setup
 
+### Install Golang
+
+`sudo make setup`
+
+### Upgrade golang
+
+`sudo make install-go`
+
+### Build artifact
+
+`make build`
+
 ## Release Milestones
+
