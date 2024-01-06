@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-	go-version: ^1.18.1
+        go-version: ^1.18.1
 
 
     - name: Check out code into the Go module directory
@@ -35,5 +35,5 @@ jobs:
     - name: Archive
       uses: actions/upload-artifacts@v2
       with:
-	name: api
-      	path: artifacts
+        name: api
+        path: artifacts
