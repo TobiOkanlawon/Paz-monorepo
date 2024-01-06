@@ -33,7 +33,7 @@ jobs:
 
 
     - name: Archive
-      uses: actions/upload-artifacts@v2
+      uses: actions/upload-artifact@v2
       with:
         name: api
         path: artifacts
