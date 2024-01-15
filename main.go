@@ -1,39 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+
+	web_backend "github.com/TobiOkanlawon/PazBackend/web_app"
 )
 
 func main() {
-
-	addr := ":8080"
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/hello",
-		func(w http.ResponseWriter, r *http.Request) {
-			enc := json.NewEncoder(w)
-			w.Header().
-				Set("Content-Type",
-					"application/json; charset=utf-8")
-			resp := Resp{
-				Language:    "English",
-				Translation: "Hello",
-			}
-			if err := enc.Encode(resp); err != nil {
-				panic(fmt.Sprintf("unable to encode response, %s", err))
-			}
-		})
-
-	log.Printf("listening on %s\n", addr)
-
-	log.Fatal(http.ListenAndServe(addr, mux))
-}
-
-type Resp struct {
-	Language    string `json:"language"`
-	Translation string `json:"translation"`
+	handler_func, err := web_backend.WebAppServer()
+	if err != nil {
+		log.Fatalf("error with setting up server %s", err)
+	}
+	fmt.Println("Running the server at port 8001")
+	log.Fatal(http.ListenAndServe(":8001", handler_func))
 }
