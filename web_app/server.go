@@ -2,7 +2,6 @@ package web_app
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
 	chi "github.com/go-chi/chi/v5"
