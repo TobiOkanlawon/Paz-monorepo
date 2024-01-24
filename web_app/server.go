@@ -19,7 +19,7 @@ type RouteTuple struct {
 
 type RouteMap map[RouteURL][]RouteTuple
 
-func generateRouter(routes RouteMap) *chi.Mux {
+func NewRouter(routes RouteMap) *chi.Mux {
 	r := chi.NewRouter()
 	// TODO: the logger should also be injected
 	r.Use(middleware.Logger)
@@ -42,13 +42,17 @@ func StartConfigurableWebAppServer(routes RouteMap) (http.Handler, error) {
 		return nil, ErrorEmptyRouteMap
 	}
 	
-	r := generateRouter(routes)
+	r := NewRouter(routes)
 
 	return r, nil
 }
 
 func WebAppServer() (http.Handler, error){
-	handler, err := StartConfigurableWebAppServer(make(RouteMap))
+	route_map := make(RouteMap)
+	route_map[RouteURL("/")] = []RouteTuple{
+		RouteTuple{"GET", homeGetHandler},
+	}
+	handler, err := StartConfigurableWebAppServer(route_map)
 
 	if err != nil {
 		return nil, err

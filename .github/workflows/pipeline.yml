@@ -24,7 +24,24 @@ jobs:
        run: go get -t ./...
 
     -  name: Run Test
-       run: go test ./...
+       run: make test
+       
+    -  name: Coverage Check
+       run: make coverage
+       
+    -  name: Generate Report
+       run: make report
+
+    -  name: Copy Files
+       run: |
+            mkdir reports
+            cp cover.html reports/.
+
+    -  name: Archive
+       uses: actions/upload-artifact@v2
+       with:
+         name: reports
+         path: reports
        
   build:
     name: Build App
@@ -56,3 +73,40 @@ jobs:
       with:
         name: api
         path: artifacts
+
+  deliver:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+        uses: actions/checkout@v2
+        
+    - name: Download binary
+        uses: actions/download-artifact@v2
+        with:
+          name: api
+          
+    - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+              Still in experimentation/development phase
+        draft: true
+        prerelease: true
+        
+    - name: Upload Release Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url:
+            ${{ steps.create_release.outputs.upload_url }}
+        asset_path: api
+        asset_name: api
+        asset_content_type: application/octet-stream
