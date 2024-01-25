@@ -1,13 +1,24 @@
 package web_app
 
 import (
+	"log"
 	"os"
 	"testing"
 	"testing/fstest"
 )
 
+func setupSuite(t *testing.T) func(t *testing.T) {
+	log.Println("setting up a clean partialsManager")
+	ClearPartialsManager()
+	return func(t *testing.T) {
+		log.Println("teardown suite")
+	}
+}
+
 func TestPartials(t *testing.T) {
 	t.Run("can successfully register a partial", func(t *testing.T) {
+		teardownSuite := setupSuite(t)
+		defer teardownSuite(t)
 		path := "test"
 		fsMap := fstest.MapFS{
 			path: {Data: []byte("test")},
@@ -21,6 +32,8 @@ func TestPartials(t *testing.T) {
 	})
 
 	t.Run("returns an error on non-existent path", func(t *testing.T) {
+		teardownSuite := setupSuite(t)
+		defer teardownSuite(t)
 		fsMap := fstest.MapFS{}
 		partials_manager := GetPartialsManager(fsMap)
 		path := "non-existent-path"
@@ -32,25 +45,29 @@ func TestPartials(t *testing.T) {
 	})
 
 	t.Run("can retrieve a partial that was previously stored", func(t *testing.T) {
-		path := "non-existent-path"
+		teardownSuite := setupSuite(t)
+		defer teardownSuite(t)
+		path := "testPartial"
 		fsMap := fstest.MapFS{
-			path: {Data: []byte("test")},
+			path: {Data: []byte("some data")},
 		}
+
 		partials_manager := GetPartialsManager(fsMap)
+		partials_manager.RegisterPartial("test", path)
 
-		err := partials_manager.RegisterPartial("testPartial", path)
-
+		returnedPath, err := partials_manager.GetPartial("test")
 		if err != nil {
-			t.Fatalf("failed with err %q", err)
+			t.Errorf("did not expect an error: {%q} while trying to retrieve a registered partial: {%q}", err, "test")
 		}
 
-		_, err = partials_manager.GetPartial("testPartial")
-		if err != nil {
-			t.Errorf("did not expect an error: {%q} while trying to retrieve a registered partial: {%q}", err, "testPartial")
+		if returnedPath != path {
+			t.Errorf("did not return the expected path %q, returned %q", path, returnedPath)
 		}
 	})
 
 	t.Run("returns an error while trying to retrieve a non-existent partial", func(t *testing.T) {
+		teardownSuite := setupSuite(t)
+		defer teardownSuite(t)
 		manager := GetPartialsManager(fstest.MapFS{})
 
 		_, err := manager.GetPartial("some-non-existent-partial")
@@ -61,9 +78,13 @@ func TestPartials(t *testing.T) {
 	})
 
 	t.Run("GetPartialsManager returns a singleton object", func(t *testing.T) {
+		teardownSuite := setupSuite(t)
+		defer teardownSuite(t)
 		path := "non-existent-path"
 		fsMap := fstest.MapFS{
-			path: {Data: []byte("test")},
+			path: {
+				Data: []byte("test"),
+			},
 		}
 		partials_manager := GetPartialsManager(fsMap)
 
