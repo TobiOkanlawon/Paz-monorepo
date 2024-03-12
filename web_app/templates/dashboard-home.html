@@ -1,0 +1,128 @@
+{{define "title"}}Dashboard{{end}}
+{{define "head"}}
+<link href="/static/dashboard/home.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<!-- TODO: don't use CDN in production: https://htmx.org/docs/#via-a-cdn-e-g-unpkg-com -->
+<main id="main-content">
+  <div class="info-container">
+    <section class="info-card">
+      <h2>Total Savings</h2>
+      <p>&#8358; {{ .Savings }}</p>
+    </section>
+    <section class="info-card">
+      <h2>Total Loans Collected</h2>
+      <p>&#8358; {{ .Loans }}</p>
+    </section>
+    <section class="info-card">
+      <h2>Total Investments</h2>
+      <p>&#8358; {{ .Investments}}</p>
+    </section>
+  </div>
+  <div class="main-bottom-container">
+    <div class="main-left-side">
+      
+      <div class="main-left-side-cta-card">
+	<img alt="lock" src="/static/images/lucide_lock.png"/>
+	<div class="main-left-side-cta-card-middle">
+	  <h2>Become a Paz Saver</h2>
+	  <p>Start saving today and stand a chance to earn up to 12% per annum.</p>
+	</div>
+	<button class="primary">Get Started!</button>
+      </div>
+      
+      <div class="main-left-side-cta-card">
+	<img alt="" src="/static/images/group.png"/>
+	<div class="main-left-side-cta-card-middle">
+	  <h2>Paz Family Vault</h2>
+	  <p>Start saving with your family members today and stand a chance to earn higher returns annually.</p>
+	</div>
+        <button class="secondary">Get Started!</button>
+      </div>
+
+      <div id="recent-activity-container">
+        <h2>Recent activity</h2>
+	{{if .Activities }}
+	{{range .Activities}}
+	<div class="recent-activity-card">
+          <div class="recent-activity-card-left-side">
+	    <img alt="" src="/static/activity-logo.png"/>
+	    <p>{{.Text}}</p>
+	  </div>
+          <!-- <p>{{.Time}}</p> -->
+	  <p>2:45pm</p>
+	</div>
+	{{end}}
+	{{else}}
+        <p>No activities!</p>
+	{{end}}
+
+
+	<!--<div class="recent-activity-card">
+          <div class="recent-activity-card-left-side">
+	    <img alt="" src="/static/activity-logo.png"/>
+	    <p>Money withdrawn from savings</p>
+	  </div>
+          <p>N 50,000</p>
+          <p>2:45pm</p>
+	</div>
+	-->
+      </div>
+    </div>
+    <div class="main-right-side">
+      <div class="main-right-side-card">
+	<h2>Avoid Embarrassing Emergencies. Get a Quick Loan today!</h2>
+	<button class="primary">Get a Loan</button>
+      </div>
+      <div class="main-right-side-card">
+	<h2>Secure Your Future Today with Paz's Investment Options'</h2>
+	<p>Hedge your funds against inflation and devaluation with our secure treasury investments.</p>
+	<button class="primary">Get started</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-flex-container" role="document">
+  <div id="modal-container">
+    <article class="modal">
+      <h2>Welcome Biodun!</h2>
+      <p>Just a few more steps to setup your account </p>
+
+      <div class="modal-card-container">
+	<div class="modal-card">
+	  <div class="modal-card-left">
+	    <p>Add your BVN now</p>
+	  </div>
+	  <button class="primary" hx-target="#modal-container" hx-swap="outerHTML" hx-get="/dashboard/fragments/bvn">Add BVN</button>
+	</div>
+
+	<div class="modal-card">
+	  <div class="modal-card-left">
+	    <p>Securely add a debit card</p>
+	  </div>
+	  <button class="primary" hx-target="#modal-container" hx-swap="outerHTML" hx-get="/dashboard/fragments/add-debit">Add debit card</button>
+	</div>
+      </div>
+
+      <a class="plain-link" hx-get="/dashboard/skip-onboarding">Skip</a>
+    </article>
+  </div>
+  <div class="modal-overlay"></div>
+</div>
+
+<script>
+  const modal = document.querySelector(".modal-flex-container")
+  const overlay = document.querySelector(".modal-overlay")
+  // const closeModalButton = document.querySelector()
+
+  const openModal = function() {
+      modal.classList.remove("hidden");
+  }
+
+  const closeModal = function() {
+      modal.classList.add("hidden");
+  }
+  overlay.addEventListener("click", closeModal)
+</script>
+{{end}}

@@ -1,0 +1,66 @@
+.thrift-heading-container {
+    display: flex;
+    justify-content: space-between;
+    margin: 24px 0px;
+}
+
+.thrift-heading-container-left > h1 {
+    margin-bottom: 18px;
+}
+
+.thrift-plans-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 36px;
+    margin: 36px 0px;
+}
+
+.thrift-plan {
+    border-radius: 16px;
+    max-width: 480px;
+    padding: 36px 24px;
+    box-shadow: 0px 0px 30px 0px #00000026;
+}
+
+.thrift-plan:hover {
+    cursor: pointer;
+    box-shadow: 0px 0px 40px 0px #00000040;
+}
+
+.thrift-plan-heading {
+    font-size: 1.2em;
+    margin: 14px 0px;
+}
+
+.thrift-plan-heading > h2 {
+    margin: 14px 0px;
+    font-weight: bold;
+}
+
+.thrift-plan-middle {
+    margin: 24px 0px;
+}
+
+.thrift-plan-middle p:nth-of-type(1) {
+    color: var(--primary-blue-3);
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.thrift-plan-middle p:nth-of-type(2) {
+    font-size: 0.8em;
+    margin-top: 4px;
+}
+
+.thrift-plan-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.thrift-plan-owner-status {
+    background-color: var(--light-green);
+    color: var(--dark-green);
+    padding: 8px 6px;
+    border-radius: 8px;
+}

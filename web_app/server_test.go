@@ -26,6 +26,7 @@ func TestRoutes(t *testing.T) {
 		routeMap[RouteURL(routePath)] = []RouteTuple{routeTuple}
 		return routeMap
 	}
+	
 	t.Run("returns the page at /", func(t *testing.T) {
 		homeRouteBody := "Hello, World!"
 		routes := makeDefaultRouteMap(t, "/", homeRouteBody)

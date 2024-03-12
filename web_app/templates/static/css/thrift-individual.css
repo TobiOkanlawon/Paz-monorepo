@@ -1,0 +1,135 @@
+.container {
+    padding: 48px 54px;
+}
+
+.heading-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 36px;
+}
+
+.heading-container-right {
+    align-self: flex-start;
+}
+
+.heading-container-left h1 {
+    margin-bottom: 18px;
+}
+
+.information-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+}
+
+.information-pill {
+    margin-right: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ACB5BD;
+    padding: 12px 18px;
+    border-radius: 8px;
+}
+
+.information-pill-heading {
+    color: #204D88;
+    font-size: 0.7em;
+    margin-bottom: 4px;
+}
+
+.information-pill-balance {
+    font-size: 1.3em;
+    color: var(--primary-blue-3);
+    font-weight: bold;
+}
+
+.information-pill-defaulters,
+.information-pill-balance,
+.information-pill-round-owner,
+.information-pill-round-number {
+    font-weight: 400;
+    font-size: 1.2em;
+    color: var(--primary-blue-3);
+}
+
+.information-pill-round-owner {
+    font-weight: bold;
+}
+
+.information-pill-defaulters-number {
+    font-weight: bold;
+    color: var(--primary-blue-3);
+    font-weight: ;
+}
+
+.members-container {
+    margin-bottom: 36px;
+}
+
+.members-pill-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.members-pill {
+    display: flex;
+    gap: 8px;
+    border-radius: 8px;
+    margin-top: 8px;
+    margin-right: 8px;
+    padding: 10px 36px 10px 10px;
+    color: var(--primary-blue-3);
+}
+
+.members-pill:not(.round-owner) {
+    border: 1px solid #ACB5BD;
+}
+
+.members-pill.round-owner {
+    border: 1px dashed #8DCCFE;
+    background-color: #339AF01A;
+}
+
+.members-pill img {
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
+    background-color: #acb5bd;
+    border: 1px solid transparent;
+}
+
+.members-pill p:nth-of-type(2) {
+    font-size: 0.8em;
+    margin-top: 3px;
+}
+
+.members-pill.round-owner p:nth-of-type(2) {
+    color: var(--dark-green);
+}
+
+.activities-container {
+    
+}
+
+.activity-card-name {
+    font-weight: bold;
+}
+
+/* .activities-container > h2 { */
+/*     font-size: 1.3em; */
+/* } */
+
+.activity-card {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 24px;
+    align-items: center;
+    box-shadow: 0px 0px 30px 0px #00000026;
+    margin: 24px 0px;
+    border-radius: 8px;
+}
+
+.activity-card-left-side {
+    display: flex;
+    align-items: center;
+}

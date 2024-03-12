@@ -1,0 +1,21 @@
+<div id="modal-container">
+  <h2>Add your BVN</h2>
+  <p>You can verify your identity on PAZ with your BVN</p>
+
+  <div class="modal-body">
+    <form action="/dashboard/fragments/bvn" hx-post="/dashboard/fragments/bvn" hx-target="#modal-container" hx-swap="outerHTML">
+      	<div class="form-control">
+          <label for="bvn">BVN</label>
+          <input id="bvn" name="bvn" placeholder="Enter your BVN number" type="number" value="" required="true"/>
+          <div class="form-control-information">To get your BVN, dial *565*0#</div>
+	  <div class="form-control-error-container">
+	  </div>
+	  <!-- TODO: add regex validation -->
+	</div>
+
+        <input name="submit" type="submit" value="Add BVN"/>
+    </form>
+    <!-- TODO: hx-boosting this link causes a flash of noscript -->
+    <a class="form-nav-link" href="/dashboard/home">Back</a>
+  </div>
+</div>

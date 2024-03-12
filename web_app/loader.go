@@ -13,7 +13,7 @@ type store struct {
 	kv_store map[string]string
 }
 
-func NewStore() *store {
+func newStore() *store {
 	return &store{
 		kv_store: make(map[string]string),
 	}
@@ -27,6 +27,12 @@ var lock *sync.Mutex = &sync.Mutex{}
 // TODO: consider this later.
 // I'm using this because you can't compare a PartialsManger instance
 var isInstanceCreated bool = false
+
+type IPartialsManager interface {
+	GetPartial(string) (string, error)
+	Clear() (error)
+	RegisterPartial(string, string) (error)
+}
 
 // The PartialsManger stores the path for each partial, prevents duplicates and is a singleton to keep things organized
 // NOT thread-safe
@@ -65,13 +71,14 @@ func ClearPartialsManager() {
 	}
 }
 
+// TODO: store file content, not path
 func GetPartialsManager(filesystem fs.FS) *partialsManager {
 	lock.Lock()
 	defer lock.Unlock()
 	if isInstanceCreated == false {
 		instance := &partialsManager{
 			fileSystem: filesystem,
-			store:      NewStore(),
+			store:      newStore(),
 		}
 		partialsManagerInstance = instance
 		isInstanceCreated = true
@@ -106,8 +113,8 @@ func (p *partialsManager) GetPartial(partialName string) (partialPath string, er
 
 // Clear returns the partialsManager to an empty state
 func (p *partialsManager) Clear() error{
-	newStore := NewStore()
-	p.store = newStore
+	store := newStore()
+	p.store = store
 	// if there's ever a need for an error while clearing.
 	return nil
 }

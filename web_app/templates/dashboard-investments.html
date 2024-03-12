@@ -1,0 +1,67 @@
+{{define "title"}}Investments{{end}}
+{{define "head"}}
+  <link href="/static/dashboard/investments.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<main>
+  <h1>Investments</h1>
+  <p>Explore all our investments plans here</p>
+
+  <div class="investments-info-card-container">
+    <div class="investments-info-card">
+      <h2>Current Balance</h2>
+      <div class="investments-info-card-details">
+	<p>N 0.00</p>
+	<button>Instant Top up</button>
+      </div>
+    </div>
+    <div class="investments-info-card">
+      <div class="investments-info-card">
+        <h2>Total investments</h2>
+	<div class="investments-info-card-details">
+	  <p>N 0.00</p>
+	  <button>Instant Top up</button>
+	</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-container">
+    <form action="">
+      <label for="options">Filter</label>
+      <select id="options" name="options" type="text" value="">
+        <option value="">
+	  Select option
+	</option>
+      </select>
+    </form>
+  </div>
+  
+  <div class="investments-plans-container">
+    <div class="investments-plans">
+      <img alt="" src=""/>
+      <div class="investments-plans-top">
+        <h2>Nigerian EuroBond Funds</h2>
+        <p>United capital value investments</p>
+      </div>
+      <div class="investments-plans-bottom">
+        <p>YTD Returns: 0.06%</p>
+        <p>Risk: Moderate</p>
+      </div>
+      <button>Invest now</button>
+    </div>
+    <div class="investments-plans">
+      <img alt="" src=""/>
+      <div class="investments-plans-top">
+        <h2>Nigerian EuroBond Funds</h2>
+        <p>United capital value investments</p>
+      </div>
+      <div class="investments-plans-bottom">
+        <p>YTD Returns: 0.06%</p>
+        <p>Risk: Moderate</p>
+      </div>
+      <button>Invest now</button>
+    </div>
+  </div>
+</main>
+{{end}}

@@ -1,0 +1,43 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{template "title" .}} | Paz Finance</title>
+    <meta charset="utf-8">
+    <link href="/static/css/base.css" rel="stylesheet"/>
+    <link href="/static/dashboard/base.css" rel="stylesheet">
+    {{template "head" .}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <noscript>Javascript is required to use this application</noscript>
+    <!-- TODO: get the meta charset, device width etc -->
+  </head>
+  <body id="body">
+    <header>
+      <div class="left-side"></div>
+      <div class="right-side"></div>
+    </header>
+    <div id="content-container">
+      <aside id="sidebar">
+        <nav>
+          <ul>
+            <li><a class="sidebar-link" href="/dashboard/home">Home</a></li>
+            <li><a class="sidebar-link" href="/dashboard/profile">Profile</a></li>
+            <li><a class="sidebar-link" href="/dashboard/savings">Savings</a></li>
+            <li><a class="sidebar-link" href="/dashboard/loans">Loans</a></li>
+            <li><a class="sidebar-link" href="/dashboard/investments">Investments</a></li>
+            <li><a class="sidebar-link" href="/dashboard/thrift">Thrift</a></li>
+          </ul>
+	</nav>
+
+	<p>Logout</p>
+      </aside>
+      
+      {{template "main" .}}
+    </div>
+    
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+  </body>
+</html>
+{{end}}

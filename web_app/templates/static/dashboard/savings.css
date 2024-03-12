@@ -1,0 +1,67 @@
+h1 {
+    font-size: 1.4em;
+    margin: 12px 0px;
+}
+
+.savings-info-card {
+    padding: 18px 14px;
+    border: 1px solid #ACB5BD;
+    border-radius: 8px;
+    min-width: 240px;
+    width: 40%;
+    margin: 48px 0px;
+}
+
+.savings-info-card > h2 {
+    font-size: 0.8em;
+    margin: 12px 0px;
+}
+
+.savings-info-card > p {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--primary-blue-3);
+}
+
+.savings-plans-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+}
+
+.savings-plans {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    border-radius: 8px;
+    padding: 48px 36px 0px 36px;
+}
+
+.savings-plans-right-side {
+    display: flex;
+    flex-direction: column;
+}
+
+.savings-plans-right-side > h2 {
+    margin: 12px 0px;
+    font-size: 1.2em;
+    font-weight: 500;
+    font-family: "Montserrat", sans-serif;
+}
+
+.savings-plans-right-side > button {
+    margin-top: 24px;
+    width: fit-content;
+    align-self: flex-end;
+}
+
+.savings-plans:nth-of-type(1) {
+    background-color: #3475DF0D;
+}
+
+.savings-plans:nth-of-type(2) {
+    background-color: #243D7D1A;
+}
+
+.savings-plans:nth-of-type(3) {
+    background-color: #3475DF0D;
+}

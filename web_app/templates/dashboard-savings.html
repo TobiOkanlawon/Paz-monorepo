@@ -1,0 +1,42 @@
+{{define "title"}}Savings{{end}}
+{{define "head"}}
+  <link href="/static/dashboard/savings.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<main>
+  <h1>Savings</h1>
+  <p>Explore all our savings plans here</p>
+
+  <div class="savings-info-card">
+    <h2>Total Balance</h2>
+    <p>N 0.00</p>
+  </div>
+
+  <div class="savings-plans-container">
+    <div class="savings-plans">
+      <img alt="" src=""/>
+      <div class="savings-plans-right-side">
+        <h2>Paz Solo Saver</h2>
+        <p>Save money regularly in a locked plan with interest of up to 12% per annum.</p>
+        <button class="primary"  href="/dashboard/savings/solo-saver">Start now</button>
+      </div>
+    </div>
+    <div class="savings-plans">
+      <img alt="" src=""/>
+      <div class="savings-plans-right-side">
+        <h2>Paz Family Vault</h2>
+        <p>Save money together with your loved ones and get interest of up to 16% per annum. </p>
+	<button href="/dashboard/savings/solo-saver" class="primary">Start now</button>
+      </div>
+    </div>
+    <div class="savings-plans">
+      <img alt="" src=""/>
+      <div class="savings-plans-right-side">
+        <h2>Paz Target Saver</h2>
+        <p>Save money regularly in a locked plan with interest of up to 12% per annum.</p>
+	<button href="/dashboard/savings/solo-saver" class="primary">Start now</button>
+      </div>
+    </div>
+  </div>
+</main>
+{{end}}

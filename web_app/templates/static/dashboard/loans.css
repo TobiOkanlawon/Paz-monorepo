@@ -1,0 +1,51 @@
+h1 {
+    font-size: 1.4em;
+    margin: 12px 0px;
+}
+
+.loans-info-card {
+    padding: 18px 14px;
+    border: 1px solid #ACB5BD;
+    border-radius: 8px;
+    min-width: 240px;
+    width: 40%;
+    margin: 48px 0px;
+}
+
+.loans-info-card > h2 {
+    font-size: 0.8em;
+    margin: 12px 0px;
+}
+
+.loans-info-card > p {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--primary-blue-3);
+}
+
+.loans-plans {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    border-radius: 8px;
+    padding: 48px 36px 0px 36px;
+    width: 540px;
+    background-color: #3475DF0D;
+}
+
+.loans-plans-right-side {
+    display: flex;
+    flex-direction: column;
+}
+
+.loans-plans-right-side > h2 {
+    margin: 12px 0px;
+    font-size: 1.2em;
+    font-weight: 500;
+    font-family: "Montserrat", sans-serif;
+}
+
+.loans-plans-right-side > button {
+    margin-top: 24px;
+    width: fit-content;
+    align-self: flex-end;
+}

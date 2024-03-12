@@ -1,0 +1,73 @@
+{{define "title"}}Thrift{{end}}
+{{define "head"}}
+<link href="/static/css/thrift-new.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<div class="container">
+  <!-- <div class="control-container"> -->
+  <!--   <button class="plain-button"> -->
+  <!--     <- Back -->
+  <!--   </button> -->
+  <!-- </div> -->
+<main>
+  <div class="thrift-new-heading-container">
+    <h1>Create a new thrift group</h1>
+  </div>
+
+  <div class="thrift-main-content">
+    <form action="/thrift/new" method="POST">
+      {{ .csrfField }}
+      
+      <div class="form-control">
+	<label for="title">Group Title</label>
+	<input id="title" name="title" type="text" value="" placeholder="Enter title" required/>
+	<div class="form-control-error-container">
+	</div>
+	<!-- TODO: add regex validation -->
+      </div>
+      
+      <div class="form-control">
+	<label for="description">Group Description</label>
+	<input id="description" name="description" type="text" value="" placeholder="Enter a short description about your group" required="true"/>
+	<div class="form-control-error-container">
+	</div>
+	<!-- TODO: add regex validation -->
+      </div>
+      
+      <div class="form-control">
+	<label for="amount">Amount to be contributed</label>
+	<input id="amount" name="amount" step="500" type="number" min="1000" value="" placeholder="Enter an amount" required="true"/>
+	<div class="form-control-error-container">
+	</div>
+	<!-- TODO: add regex validation -->
+      </div>
+      
+      <div class="form-control">
+	<label for="number-of-members">Expected number of members</label>
+	<input id="number-of-members" name="number-of-members" type="number" min="2" value="" placeholder="Enter the number of members in the thrift" required="true"/>
+	<div class="form-control-error-container">
+	</div>
+	<!-- TODO: add regex validation -->
+      </div>
+      <div class="form-control">
+	<label for="frequency">Frequency</label>
+        <select id="frequency" name="frequency">
+          <option value="">Select option</option>
+	  <option value="daily">Daily</option>
+          <option value="monthly">Monthly</option>
+	  <option value="yearly">Yearly</option>
+        </select>
+	<div class="form-control-error-container">
+	</div>
+	<!-- TODO: add regex validation -->
+      </div>
+
+      <div class="button-container">
+	<button>Back</button>
+	<button type="submit" class="primary">Create group</button>
+      </div>
+    </form>
+  </div>
+</main>
+</div>
+{{end}}

@@ -1,0 +1,14 @@
+<div id="modal-container">
+  <h2>Success</h2>
+  <p>{{ .Message }}</p>
+
+  <div class="modal-body">
+    <div class="modal-card">
+      <div class="modal-card-left">
+	<p>Securely add a debit card</p>
+      </div>
+      <button hx-target="modal-container" hx-swap="outerHTML" hx-get="/dashboard/fragments/add-debit">Add debit card</button>
+    </div>
+  </div>
+  <a class="plain-link" href="">Skip</a>
+</div>

@@ -1,0 +1,46 @@
+{{define "title"}}Login{{end}}
+{{define "head"}}
+<link href="/static/css/login.css" rel="stylesheet"/>
+{{end}}
+{{define "aside"}}
+<aside>
+  <img id="paz-logo" src="/static/images/images/PAZPryLogoTextInverted 1.png" alt="Paz logo">
+  <div id="aside-content">
+    <h2>Welcome</h2>
+    <p>Powering your dreams!</p>
+    <img alt="background-image" src="/static/images/login-background.png"/>
+  </div>
+</aside>
+{{end}}
+{{define "main"}}
+<main>
+  <h1>Login to your account</h1>
+  <form action="/login" method="POST">
+    {{.csrfField}}
+    <div class="form-control">
+      <label for="email">Email Address</label>
+      <input id="email" name="email" type="email" value="" placeholder="Enter your email address" required="true"/>
+      <div class="form-control-error-container">
+      </div>
+      <!-- TODO: add regex validation -->
+    </div>
+    
+    <div class="form-control">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" value="" placeholder="Enter your password" autocomplete="false" required="true"/>
+      <div class="form-control-error-container">
+      </div>
+    </div>
+    
+    <div class="login-form-vertical-row">
+      <div class="form-control">
+        <input id="remember-me" id="remember-me" name="remember-me" type="checkbox" value=""/>
+        <label for="remember-me">Remember me</label>
+      </div>
+      <a id="forgot-password-link" href="/forgot-password">Forgot Password?</a>
+    </div>
+    <input class="primary" role="button" type="submit" value="Log in">
+    <a id="create-new-account-link" href="/register">Create a New Account</a>
+  </form>
+</main>
+{{end}}

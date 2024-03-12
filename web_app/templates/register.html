@@ -1,0 +1,59 @@
+{{define "title"}}Register{{end}}
+{{define "head"}}
+<link href="/static/css/register.css" rel="stylesheet"/>
+{{end}}
+{{define "aside"}}
+<aside>
+  <img id="paz-logo" src="/static/images/images/PAZPryLogoTextInverted 1.png" alt="Paz logo">
+  <div id="aside-content">
+    <h2>S.L.I.D.E with Paz</h2>
+    <p>Tips on becoming financially stable all year round!</p>
+    <img alt="background-image" src="/static/images/register-background.png"/>
+  </div>
+</aside>
+{{end}}
+{{define "main"}}
+<main id="main">
+  <h1>Create a secure account</h1>
+  <form action="/register" method="POST">
+    {{ .csrfField }}
+    <div class="form-control">
+      <label for="first-name">First Name</label>
+      <input id="first-name" placeholder="Enter your first name" name="first-name" type="text" value="" required="true"/>
+      <div class="form-control-error-container"></div>
+      <!-- TODO: add regex validation -->
+    </div>
+
+    <div class="form-control">
+      <label for="last-name">Last Name</label>
+      <input id="last-name" placeholder="Enter your last name" name="last-name" type="text" value="" required="true"/>
+      <div class="form-control-error-container"></div>
+      <!-- TODO: add regex validation -->
+    </div>
+
+    <div class="form-control">
+      <label for="email">Email Address</label>
+      <input id="email" placeholder="Enter your email address" name="email" type="email" value="" required="true"/>
+      <div class="form-control-error-container"></div>
+      <!-- TODO: add regex validation -->
+    </div>
+    
+    <div class="form-control">
+      <label for="password">Password</label>
+      <input id="password" placeholder="Enter your password" name="password" type="password" value="" required="true"/>
+      <div class="form-control-error-container"></div>
+    </div>
+
+    <div class="form-control">
+      <label for="confirm-password">Re - Password</label>
+      <input id="confirm-password" placeholder="Enter your password again" name="confirm-password" type="password" value="" required="true"/>
+      <div class="form-control-error-container"></div>
+    </div>
+
+    <p id="terms-of-service-text">By clicking "Create account", I agree to PAZ's <a href="">privacy policy</a> and <a href="">terms of service.</a>
+      
+      <input type="submit" value="Create account"/>
+      <a id="return-to-log-in-link" href="/login">Return to Log in</a>
+  </form>
+</main>
+{{end}}
