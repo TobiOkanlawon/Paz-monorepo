@@ -28,7 +28,7 @@
 	  <h2>Become a Paz Saver</h2>
 	  <p>Start saving today and stand a chance to earn up to 12% per annum.</p>
 	</div>
-	<button class="primary">Get Started!</button>
+	<a class="button primary" href="/dashboard/savings">Get Started!</a>
       </div>
       
       <div class="main-left-side-cta-card">
@@ -37,7 +37,7 @@
 	  <h2>Paz Family Vault</h2>
 	  <p>Start saving with your family members today and stand a chance to earn higher returns annually.</p>
 	</div>
-        <button class="secondary">Get Started!</button>
+        <a href="/dashboard/savings/family-vault" class="button secondary">Get Started!</a>
       </div>
 
       <div id="recent-activity-container">
@@ -47,10 +47,15 @@
 	<div class="recent-activity-card">
           <div class="recent-activity-card-left-side">
 	    <img alt="" src="/static/activity-logo.png"/>
-	    <p>{{.Text}}</p>
+	    <p>{{.PrimaryInformation}}</p>
+	    {{ if .SecondaryInformation }}
+            <div class="recent-activity-card-middle">
+              <span>{{.SecondaryInformation}}</span>
+	    </div>
+	    {{end}}
 	  </div>
           <!-- <p>{{.Time}}</p> -->
-	  <p>2:45pm</p>
+	  <p>{.Time}</p>
 	</div>
 	{{end}}
 	{{else}}
@@ -72,21 +77,21 @@
     <div class="main-right-side">
       <div class="main-right-side-card">
 	<h2>Avoid Embarrassing Emergencies. Get a Quick Loan today!</h2>
-	<button class="primary">Get a Loan</button>
+	<a href="/dashboard/loans" class="button primary">Get a Loan</a>
       </div>
       <div class="main-right-side-card">
 	<h2>Secure Your Future Today with Paz's Investment Options'</h2>
 	<p>Hedge your funds against inflation and devaluation with our secure treasury investments.</p>
-	<button class="primary">Get started</button>
+	<a href="/dashboard/investments" class="button primary">Get started</a>
       </div>
     </div>
   </div>
 </main>
-
+{{if .ShowModal }}
 <div class="modal-flex-container" role="document">
   <div id="modal-container">
     <article class="modal">
-      <h2>Welcome Biodun!</h2>
+      <h2>Welcome {{.FirstName}}!</h2>
       <p>Just a few more steps to setup your account </p>
 
       <div class="modal-card-container">
@@ -125,4 +130,5 @@
   }
   overlay.addEventListener("click", closeModal)
 </script>
-{{end}}
+{{ end }}
+{{ end }}

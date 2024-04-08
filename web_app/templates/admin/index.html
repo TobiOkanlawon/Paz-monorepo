@@ -1,0 +1,56 @@
+{{define "title"}}Admin Dashboard{{end}}
+{{define "head"}}
+<link href="/static/admin/home.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<!-- TODO: don't use CDN in production: https://htmx.org/docs/#via-a-cdn-e-g-unpkg-com -->
+<header>
+  <nav>
+    <ul>
+      <li>Loans</li>
+      <li>Investments</li>
+      <li>Savings</li>
+    </ul>
+  </nav>
+</header>
+<main id="content-container">
+  <section>
+    <h1>Loan requests</h1>
+    {{if .Loans}}
+    <ul>
+      {{range .Loans}}
+      <li data-loan-id="{{.ID}}">{{.FirstName}} {{.LastName}} -- {{.Amount}}
+	<button></button>
+      </li>
+      {{end}}
+    </ul>
+    {{end}}
+  </section>
+
+  <section>
+    <h1>Investment requests</h1>
+    {{if .Investments}}
+    <ul>
+      {{range .Investments}}
+      <li data-investments-id="{{.ID}}">{{.FirstName}} {{.LastName}} -- {{.Amount}}
+	<button></button>
+      </li>
+      {{end}}
+    </ul>
+    {{end}}
+  </section>
+
+  <section>
+    <h1>Saving withdrawal requests</h1>
+    {{if .Savings}}
+    <ul>
+      {{range .Savings}}
+      <li data-savings-id="{{.ID}}">{{.FirstName}} {{.LastName}} -- {{.Amount}}
+	<button></button>
+      </li>
+      {{end}}
+    </ul>
+    {{end}}
+  </section>
+</main>
+{{end}}

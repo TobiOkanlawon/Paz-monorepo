@@ -6,20 +6,12 @@ import (
 	"net/http"
 	"os"
 
-	"log"
-
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/sessions"
 )
 
 type RouteURL string
-
-type UserCookie struct {
-	ID           uint
-	FirstName    string
-	LastName     string
-}
 
 var ErrorEmptyRouteMap error = errors.New("passed empty RouteMap as arg")
 
@@ -65,12 +57,10 @@ func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (http.Hand
 }
 
 // TODO: write tests for the handlers getting passed in
-func WebAppServer(secretKey []byte) (http.Handler, error) {
+func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string) (http.Handler, func()error, error) {
 	partialsManager := GetPartialsManager(os.DirFS("./partials"))
-	store, err := NewSqlStore("test.db")
-	if err != nil {
-		log.Fatalf("failed to initialize store %s", err)
-	}
+	db := DB{}
+	db.Connect()
 
 	cookieStore := sessions.NewCookieStore(secretKey)
 	gob.Register(&UserCookie{})
@@ -79,7 +69,7 @@ func WebAppServer(secretKey []byte) (http.Handler, error) {
 	// set this field based on if it is dev or prod
 	// store.Options.Secure = true
 
-	handlerManager := NewHandlerManager(partialsManager, store, cookieStore)
+	handlerManager := NewHandlerManager(partialsManager, &db, cookieStore, paystackPublicKey, paystackSecretKey)
 	routeMap := make(RouteMap)
 	// TODO: handle post-slashes
 	routeMap[RouteURL("/")] = []RouteTuple{
@@ -111,6 +101,10 @@ func WebAppServer(secretKey []byte) (http.Handler, error) {
 	routeMap[RouteURL("/dashboard/loans")] = []RouteTuple{
 		{"GET", handlerManager.loansGetHandler},
 	}
+	routeMap[RouteURL("/dashboard/loans/get-loan")] = []RouteTuple{
+		{"GET", handlerManager.getLoansGetHandler},
+		{"POST", handlerManager.getLoansPostHandler},
+	}
 	routeMap[RouteURL("/dashboard/investments")] = []RouteTuple{
 		{"GET", handlerManager.investmentsGetHandler},
 	}
@@ -120,9 +114,17 @@ func WebAppServer(secretKey []byte) (http.Handler, error) {
 	}
 	routeMap[RouteURL("/dashboard/savings/family-vault")] = []RouteTuple{
 		{"GET", handlerManager.familyVaultGetHandler},
+		{"POST", handlerManager.familyVaultPostHandler},
 	}
-	routeMap[RouteURL("/dashboard/savings/target-saver")] = []RouteTuple{
+	routeMap[RouteURL("/dashboard/savings/family-vault/{planID}")] = []RouteTuple{
+		{"GET", handlerManager.familyVaultPlanGetHandler},
+	}
+	routeMap[RouteURL("/dashboard/savings/target-savings")] = []RouteTuple{
 		{"GET", handlerManager.targetSavingsGetHandler},
+	}
+	routeMap[RouteURL("/dashboard/savings/solo-saver")] = []RouteTuple{
+		{"GET", handlerManager.soloSavingsGetHandler},
+		{"POST", handlerManager.soloSavingsAddFunds},
 	}
 	routeMap[RouteURL("/dashboard/thrift")] = []RouteTuple{
 		{"GET", handlerManager.thriftGetHandler},
@@ -137,8 +139,8 @@ func WebAppServer(secretKey []byte) (http.Handler, error) {
 	handler, err := StartConfigurableWebAppServer(routeMap, secretKey)
 
 	if err != nil {
-		return nil, err
+		return nil, func()(error){return nil}, err
 	}
 
-	return handler, nil
+	return handler, db.Conn.Close, nil
 }

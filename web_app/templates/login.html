@@ -20,8 +20,13 @@
     <div class="form-control">
       <label for="email">Email Address</label>
       <input id="email" name="email" type="email" value="" placeholder="Enter your email address" required="true"/>
+      {{if .Errors.Email}}
       <div class="form-control-error-container">
+	<span>
+	  {{.Errors.Email}}
+	</span>
       </div>
+      {{end}}
       <!-- TODO: add regex validation -->
     </div>
     

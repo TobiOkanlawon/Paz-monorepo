@@ -2,12 +2,12 @@
 {{define "head"}}
   <link href="/static/dashboard/profile.css" rel="stylesheet"/>
 {{end}}
-{{ define "main" }}
-<main>
+  {{ define "main" }}
+  <main>
   <div class="top-container">
     <div class="profile-information-left">
       <img alt="" src="profile-image"/>
-      <h1>Biodun Olowo</h1>
+      <h1>{{.Information.FirstName}} {{.Information.LastName}}</h1>
     </div>
     <div class="progress-container">
       <div class="progress-bar" style="width: 70%"></div>
@@ -20,21 +20,21 @@
       <legend>Personal Information</legend>
       <div class="form-control">
         <label for="postal-address">Enter your postal address here</label>
-        <input id="postal-address" name="postal-address" type="text" value="" placeholder="Enter your postal address here"/>
+        <input id="postal-address" name="postal-address" type="text" value="{{.Information.PostalAddress}}" placeholder="Enter your postal address here"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
 
       <div class="form-control">
         <label for="date-of-birth">Date of birth</label>
-        <input id="date-of-birth" name="date-of-birth" type="date" value=""/>
+        <input id="date-of-birth" name="date-of-birth" type="date" value="{{.Information.DateOfBirth}}"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
 
       <div class="form-control">
         <label for="sex">Sex</label>
-        <select id="sex" name="sex" value="">
+        <select id="sex" name="sex" value="{{.Information.Sex}}">
           <option value="">Select your sex</option>
           <option value="Male">Male</option>
 	  <option value="Female">Female</option>
@@ -45,14 +45,14 @@
 
       <div class="form-control">
         <label for="email">Email address</label>
-        <input id="email" name="email" type="email" placeholder="Enter your email address" value=""/>
+        <input id="email" name="email" type="email" placeholder="Enter your email address" value="{{.Information.EmailAddress}}"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
 
       <div class="form-control">
         <label for="phone-number">Phone number</label>
-        <input id="phone-number" name="phone-number" placeholder="Enter your phone number" type="tel" value=""/>
+        <input id="phone-number" name="phone-number" placeholder="Enter your phone number" type="tel" value="{{.Information.PhoneNumber}}"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
@@ -61,14 +61,14 @@
       <legend>Next of Kin Details</legend>
       <div class="form-control">
         <label for="next-of-kin-first-name">First Name</label>
-        <input id="next-of-kin-first-name" name="next-of-kin-first-name" placeholder="Enter their first name" type="text" value="" required="true"/>
+        <input id="next-of-kin-first-name" name="next-of-kin-first-name" placeholder="Enter their first name" type="text" value="{{.Information.NextOfKin.FirstName}}" required="true"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
 
       <div class="form-control">
         <label for="next-of-kin-last-name">Last Name</label>
-        <input id="next-of-kin-last-name" name="next-of-kin-last-name" placeholder="Enter their last name" type="text" value="" required="true"/>
+        <input id="next-of-kin-last-name" name="next-of-kin-last-name" placeholder="Enter their last name" type="text" value="{{.Information.NextOfKin.LastName}}" required="true"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
@@ -82,19 +82,20 @@
 
       <div class="form-control">
         <label for="next-of-kin-phone-number">Phone Number</label>
-        <input id="next-of-kin-phone-number" name="next-of-kin-phone-number" placeholder="Enter their phone number" type="tel" value=""/>
+        <input id="next-of-kin-phone-number" name="next-of-kin-phone-number" placeholder="Enter their phone number" type="tel" value="{{.Information.NextOfKin.PhoneNumber}}"/>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->
       </div>
 
       <div class="form-control">
         <label for="next-of-kin-relationship">Relationship</label>
-        <select id="next-of-kin-relationship" name="next-of-kin-relationship" type="email" value="">
+        <select id="next-of-kin-relationship" name="next-of-kin-relationship" type="email" value="{{.Information.NextOfKin.Relationship}}">
           <option value="">Who is this person to you?</option>
-          <option value="Mother">Mother</option>
-          <option value="Father">Father</option>
-          <option value="Sibling">Sibling</option>
-          <option value="Child">Child</option>
+          <option value="mother">Mother</option>
+          <option value="father">Father</option>
+          <option value="sibling">Sibling</option>
+          <option value="child">Child</option>
+	  <option value="spouse">Spouse</option>
 	</select>
 	<div class="form-control-error-container"></div>
 	<!-- TODO: add regex validation -->

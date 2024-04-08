@@ -1,0 +1,59 @@
+main {
+}
+
+.heading-container {
+    margin: 12px 0px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.heading-container-left h1 {
+    margin-bottom: 18px;
+}
+
+.main-content {
+    margin-top: 48px;
+}
+
+.summary-container {
+    display: flex;
+    gap: 124px;
+}
+
+.summary-container .plan-balance-container,
+.summary-container .family-members-container {
+    padding: 16px 16px;
+    border: 1px solid #ACB5BD;
+    border-radius: 8px;
+    min-width: 240px;
+}
+
+.summary-container .plan-balance-container h2,
+.summary-container .family-members-container h2 {
+    font-size: 0.8em;
+    margin-bottom: 12px;
+}
+
+.summary-container .plan-balance-container p,
+.summary-container .family-members-container p {
+    color: var(--primary-blue-3);
+}
+
+button#add-new-members, button#instant-top-up {
+    background-color: var(--primary-blue-1);
+}
+
+.recent-activity-container {
+    margin-top: 48px;
+}
+
+.recent-activity-container h2 {
+    margin-bottom: 24px;
+    font-size: 1.2em;
+}
+
+.family-member-container-content, .plan-balance-container-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

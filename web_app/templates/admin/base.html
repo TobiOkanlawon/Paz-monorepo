@@ -1,0 +1,29 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{template "title" .}} | Paz Finance Admin</title>
+    <meta charset="utf-8">
+    <link href="/static/css/base.css" rel="stylesheet"/>
+    {{template "head" .}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <noscript>Javascript is required to use this application</noscript>
+    <!-- TODO: get the meta charset, device width etc -->
+  </head>
+  <body id="body">
+    <header>
+      <nav>
+	<ul>
+	  <li>Loans</li>
+	  <li>Investments</li>
+	  <li>Savings</li>
+	</ul>
+      </nav>
+    </header> 
+    {{template "main" .}}
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+  </body>
+</html>
+{{end}}

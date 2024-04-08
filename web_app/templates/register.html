@@ -41,7 +41,11 @@
     <div class="form-control">
       <label for="password">Password</label>
       <input id="password" placeholder="Enter your password" name="password" type="password" value="" required="true"/>
-      <div class="form-control-error-container"></div>
+      <div class="form-control-error-container">
+	{{if .Errors.Password}}
+	<span>{{.Errors.Password}}</span>
+	{{end}}
+      </div>
     </div>
 
     <div class="form-control">

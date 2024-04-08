@@ -1,67 +1,179 @@
 {{define "title"}}Investments{{end}}
 {{define "head"}}
-  <link href="/static/dashboard/investments.css" rel="stylesheet"/>
+<link href="/static/dashboard/investments.css" rel="stylesheet"/>
 {{end}}
 {{define "main"}}
 <main>
   <h1>Investments</h1>
-  <p>Explore all our investments plans here</p>
+  <p>Begin your journey into the world of investing with Paz</p>
 
-  <div class="investments-info-card-container">
-    <div class="investments-info-card">
-      <h2>Current Balance</h2>
-      <div class="investments-info-card-details">
-	<p>N 0.00</p>
-	<button>Instant Top up</button>
-      </div>
-    </div>
-    <div class="investments-info-card">
-      <div class="investments-info-card">
-        <h2>Total investments</h2>
-	<div class="investments-info-card-details">
-	  <p>N 0.00</p>
-	  <button>Instant Top up</button>
-	</div>
-      </div>
-    </div>
-  </div>
+  <form action="/dashboard/investments" method="POST">
+    {{.csrfField}}
 
-  <div class="filter-container">
-    <form action="">
-      <label for="options">Filter</label>
-      <select id="options" name="options" type="text" value="">
-        <option value="">
-	  Select option
-	</option>
+    <fieldset>
+      <legend>Employment Information</legend>
+
+      <select id="employment-status" name="employment-status" required>
+	<option value="salaried">Salaried Employment</option>
+	<option value="self-employment">Self Employment</option>
+	<option value="retired">Retirement</option>
+	<option value="unemployed">Unemployed</option>
       </select>
-    </form>
-  </div>
+      
+      <div class="form-control">
+	<label for="date-of-employment">Year of Employment</label>
+	<input id="date-of-employment" name="date-of-employment" type="date" value=""/>
+	{{if .Errors.DateOfEmployment}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.DateOfEmployment}}
+	  </span>
+	</div>
+	{{end}}
+	<!-- TODO: add regex validation -->
+      </div>
+
+      <div class="form-control">
+	<label for="employer-name">Employer's Name</label>
+	<input id="employer-name" name="employer-name" type="text" placeholder="Eg: Jane Doe" value=""/>
+	{{if .Errors.EmployerName}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.EmployerName}}
+	  </span>
+	</div>
+	{{end}}
+	<!-- TODO: add regex validation -->
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Investment Details</legend>
+
+      <div class="form-control">
+	<label for="investment-amount">Investment Amount</label>
+	<input id="investment-amount" name="investment-amount" type="number" min="1000" value="" required="true" placeholder="How much would you like to invest?"/>
+	{{if .Errors.InvestmentAmount}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.InvestmentAmount}}
+	  </span>
+	</div>
+	{{end}}
+	<!-- TODO: add regex validation -->
+      </div>
+
+
+      <div class="form-control">
+	<label for="investment-tenure">Investment Tenure (in days)</label>
+	<input id="investment-tenure" name="investment-tenure" type="number" min="90" value="" placeholder="How many days would you like us to invest money for you?" required="true"/>
+	{{if .Errors.InvestmentTenure}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.InvestmentTenure}}
+	  </span>
+	</div>
+	{{end}}
+	<!-- TODO: add regex validation -->
+      </div>
+
+      <div class="form-control">
+	<label for="TIN">Tax Identification Number</label>
+	<input id="TIN" name="TIN" type="text" value="" placeholder="What's your tax identification number?" required="true"/>
+	{{if .Errors.TIN}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.TIN}}
+	  </span>
+	</div>
+	{{end}}
+	<!-- TODO: add regex validation -->
+      </div>
+
+      <legend>Bank Details</legend>
+
+      <div class="form-control">
+	<label for="bank-account-name">Bank account name</label>
+	<input id="bank-account-name" name="bank-account-name" type="text" value="" placeholder="Eg: John Misty Doe" required="true"/>
+	{{if .Errors.BankAccountName}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.BankAccountName}}
+	  </span>
+	</div>
+	{{end}}
+	<!-- TODO: add regex validation -->
+      </div>
+
+      <div class="form-control">
+	<label for="bank-account-number">Bank account number</label>
+	<input id="bank-account-number" number="bank-account-number" type="number" min="0" value="" placeholder="Eg: 1782713489" required="true"/>
+	{{if .Errors.BankAccountNumber}}
+	<div class="form-control-error-container">
+	  <span>
+	    {{.Errors.BankAccountNumber}}
+	  </span>
+	</div>
+	{{end}}
+      </div>
+    </fieldset>
+  </form>
+
+  <!-- <div class="investments-info-card-container"> -->
+    <!--   <div class="investments-info-card"> -->
+      <!--     <h2>Current Balance</h2> -->
+      <!--     <div class="investments-info-card-details"> -->
+	<!-- 	<p>N 0.00</p> -->
+	<!-- 	<button>Instant Top up</button> -->
+	<!--     </div> -->
+      <!--   </div> -->
+    <!--   <div class="investments-info-card"> -->
+      <!--     <div class="investments-info-card"> -->
+	<!--       <h2>Total investments</h2> -->
+	<!-- 	<div class="investments-info-card-details"> -->
+	  <!-- 	  <p>N 0.00</p> -->
+	  <!-- 	  <button>Instant Top up</button> -->
+	  <!-- 	</div> -->
+	<!--     </div> -->
+      <!--   </div> -->
+    <!-- </div> -->
+
+  <!-- <div class="filter-container"> -->
+    <!--   <form action=""> -->
+      <!--     <label for="options">Filter</label> -->
+      <!--     <select id="options" name="options" type="text" value=""> -->
+	<!--       <option value=""> -->
+	  <!-- 	  Select option -->
+	  <!-- 	</option> -->
+	<!--     </select> -->
+      <!--   </form> -->
+    <!-- </div> -->
   
-  <div class="investments-plans-container">
-    <div class="investments-plans">
-      <img alt="" src=""/>
-      <div class="investments-plans-top">
-        <h2>Nigerian EuroBond Funds</h2>
-        <p>United capital value investments</p>
-      </div>
-      <div class="investments-plans-bottom">
-        <p>YTD Returns: 0.06%</p>
-        <p>Risk: Moderate</p>
-      </div>
-      <button>Invest now</button>
-    </div>
-    <div class="investments-plans">
-      <img alt="" src=""/>
-      <div class="investments-plans-top">
-        <h2>Nigerian EuroBond Funds</h2>
-        <p>United capital value investments</p>
-      </div>
-      <div class="investments-plans-bottom">
-        <p>YTD Returns: 0.06%</p>
-        <p>Risk: Moderate</p>
-      </div>
-      <button>Invest now</button>
-    </div>
-  </div>
+  <!-- <div class="investments-plans-container"> -->
+    <!--   <div class="investments-plans"> -->
+      <!--     <img alt="" src=""/> -->
+      <!--     <div class="investments-plans-top"> -->
+	<!--       <h2>Nigerian EuroBond Funds</h2> -->
+	<!--       <p>United capital value investments</p> -->
+	<!--     </div> -->
+      <!--     <div class="investments-plans-bottom"> -->
+	<!--       <p>YTD Returns: 0.06%</p> -->
+	<!--       <p>Risk: Moderate</p> -->
+	<!--     </div> -->
+      <!--     <button>Invest now</button> -->
+      <!--   </div> -->
+    <!--   <div class="investments-plans"> -->
+      <!--     <img alt="" src=""/> -->
+      <!--     <div class="investments-plans-top"> -->
+	<!--       <h2>Nigerian EuroBond Funds</h2> -->
+	<!--       <p>United capital value investments</p> -->
+	<!--     </div> -->
+      <!--     <div class="investments-plans-bottom"> -->
+	<!--       <p>YTD Returns: 0.06%</p> -->
+	<!--       <p>Risk: Moderate</p> -->
+	<!--     </div> -->
+      <!--     <button>Invest now</button> -->
+      <!--   </div> -->
+    <!-- </div> -->
 </main>
 {{end}}

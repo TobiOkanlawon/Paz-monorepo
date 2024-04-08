@@ -1,36 +1,126 @@
 {{define "title"}}Family Vault{{end}}
+{{define "head"}}
+<link href="/static/dashboard/target-savings-home.css" rel="stylesheet"/>
+{{end}}
 {{define "main"}}
 <main>
-  <h1>Paz Target Saver</h1>
-  <p>Explore all our savings plans here.</p>
-
-  <div class="main-content">
-    <article class="savings-balance">
-      <h2>Total savings balance</h2>
-      <p>N 2,000,000.00</p>
+  <div class="heading-container">
+    <div class="heading-container-left">
+      <h1>Paz Target Saver</h1>
+      <p>Explore all your savings plans here.</p>
+    </div> 
+    <div class="heading-container-right">
+      <button class="primary" id="create-new-plan">Create a new plan</button>
+    </div>
+  </div>
+    <div class="main-content">
+      <article class="savings-balance">
+	<h2>Total savings balance</h2>
+	<p>&#8358; {{.Information.Balance}}</p>
+    </div>
     </article>
-
-    <div class="target-saver-plans-container">
-      <div class="target-saver-plan">
-	<h2>Project New Car</h2>
-	<p>I must buy camaro</p>
-	<p>N 500,000.00</p>
-	<div class="target-saver-plans-lower-container">
-          <p class="target-saver-plans-lower-container-progress"></p>
-          <p class="target-saver-plans-lower-container-completion"></p>
+    
+    <div class="target-savings-plans-container">
+      {{if .Plans}}
+      {{range .Plans}}
+      <div class="target-savings-plan" data-id="{{.ID}}">
+        <div class="target-savings-plan-heading">
+	  <h2>{{.Name}}</h2>
+	  <p>{{.Description}}</p>
+	</div>
+        <div class="target-savings-plan-middle">
+	  <p>&#8358; {{.Balance}}</p>
+	</div>
+	<div class="target-savings-plan-bottom">
+          <p class="target-savings-plan-owner-status">Savings plan owner</p>
+          <p class="target-savings-plan-members">3 members</p>
 	</div>
       </div>
-
-      <div class="target-saver-plan">
-	<h2>House Rent Runs</h2>
-	<p>Rent savings quota</p>
-	<p>N 1,500,000.00</p>
-	<div class="target-saver-plans-lower-container">
-          <p class="target-saver-plans-lower-container-progress"></p>
-          <p class="target-saver-plans-lower-container-completion"></p>
-	</div>
-      </div>
+      {{end}}
+      {{end}}
     </div>
   </div>
 </main>
-{{end}}
+
+<div class="modal-flex-container hidden" role="document">
+  <div id="modal-container">
+    <article class="modal">
+      <div class="modal-heading">
+	<h2>Set-up Your Paz Target Savings Account</h2>
+	<p>Begin your journey to financial freedom</p>
+      </div>
+      <form action="/dashboard/savings/target-savings" method="POST">
+      	<div class="form-control">
+          <label for="savings-title">Savings Title*</label>
+          <input id="savings-title" name="savings-title" type="text" placeholder="What are you saving towards" required/>
+	  <div class="form-control-error-container"></div>
+	  <!-- TODO: add regex validation -->
+	</div>
+
+	<div class="form-control">
+          <label for="description">Savings Description*</label>
+          <input id="description" name="description" type="text" placeholder="Tell usa bit about the purpose of this savings plan" required/>
+	  <div class="form-control-error-container"></div>
+	  <!-- TODO: add regex validation -->
+	</div>
+
+	<div class="form-control">
+          <label for="amount">Enter an amount to contribute per interval</label>
+          <input id="amount" name="amount" type="number" min="1000" placeholder="Enter an amount to be contributed per interval" required/>
+	  <div class="form-control-error-container"></div>
+	  <!-- TODO: add regex validation -->
+	</div>
+
+	<div class="form-control">
+          <label for="savings-frequency">Select savings frequency*</label>
+          <select id="savings-frequency" name="savings-frequency" required>
+	    <option value="">Select a frequency</option>
+	    <option value="daily">Daily</option>
+	    <option value="weekly">Weekly</option>
+	    <option value="monthly">Montly</option>
+	    <option value="yearly">Yearly</option>
+	  </select>
+	  <div class="form-control-error-container"></div>
+	  <!-- TODO: add regex validation -->
+	</div>
+
+	<div class="form-control">
+          <label for="duration">Select a savings duration*</label>
+          <input id="duration" name="duration" type="number" placeholder="Enter a duration in months" min="1" required/>
+	  <div class="form-control-error-container"></div>
+	  <!-- TODO: add regex validation -->
+	</div>	
+	<button class="primary" type="submit" id="create-savings">Create Savings Plan</button>
+      </form>
+    </article>
+  </div>
+  <div class="modal-overlay"></div>
+
+  <script>
+    const modal = document.querySelector(".modal-flex-container");
+    const overlay = document.querySelector(".modal-overlay");
+    // const closeModalButton = document.querySelector()
+    const createNewPlanButton = document.getElementById("create-new-plan")
+
+    const openModal = function () {
+	modal.classList.remove("hidden");
+    };
+
+    const closeModal = function () {
+	modal.classList.add("hidden");
+    };
+    overlay.addEventListener("click", closeModal);
+    createNewPlanButton.addEventListener("click", openModal);
+    
+    const plans = document.querySelectorAll("div[data-id]");
+    for (let plan of plans) {
+	plan.addEventListener('click', () => {
+	    const id = plan.getAttribute("data-id");
+	    if (!id) return;
+	    // TODO: there should be a mechanism for dynamically inserting URLs
+	    window.location.assign(`/dashboard/savings/target-savings/${id}`);
+	})
+    }
+  </script>
+  {{end}}
+

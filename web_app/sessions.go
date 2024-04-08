@@ -1,54 +1,87 @@
 package web_app
 
 import (
-	"fmt"
-	"log"
-	"net/http"
+	"errors"
 	"time"
 
-	"github.com/bradfitz/gomemcache/memcache"
+	// "github.com/bradfitz/gomemcache/memcache"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
+	// "github.com/gorilla/sessions"
 )
 
+// The flow is that we get the sessionID from the cookie on the
+// frontend, we pass it into the GetSession function, which returns
+// the UserSession object that contains the ID that we can then use to
+// query the DB.
+
+// As for the session cookies, they have two expiry times. A
+// frequently refreshed on, and a maximum expiry time which is the
+// maximum time that a session can live.
+
+type UserCookie struct {
+	SessionID uuid.UUID
+	Expiry    time.Time
+}
+
 type UserSession struct {
-	ID             uuid.UUID
-	GorillaSession *sessions.Session
-	SessionStore   *memcache.Client
-	UID            uint
-	Expire         time.Time
+	UserID        uint
+	SessionID     uuid.UUID
+	MaximumExpiry time.Time
+	Role          string
 }
 
-var Session UserSession
+// Role is Admin, or Basic. This is used to restrict access to the admin routes
 
-func (u *UserSession) Create() {
-	// TODO: abstract the memcache URL
-	u.SessionStore = memcache.New("127.0.0.1:11211")
-	u.ID = uuid.New()
+var sessionStore = make(map[uuid.UUID]UserSession)
+
+func NewUserSession(userID uint, role string) UserCookie {
+	userSession := UserSession{}
+	// check that the sessionID doesn't exist already (I think
+	// this might be rare, but rare isn't impossible)
+
+	userSession.SessionID = generateID()
+	userSession.UserID = userID
+	userSession.Role = role
+	// expiry should be set to about 5 minutes, this being a high
+	// value application
+	userSession.MaximumExpiry = time.Now().Add(5 * time.Hour)
+
+	sessionStore[userSession.SessionID] = userSession
+
+	cookie := UserCookie{}
+	cookie.SessionID = userSession.SessionID
+	cookie.Expiry = time.Now().Add(8 * time.Minute)
+	// cookie.Expiry
+
+	return cookie
 }
 
-func (u *UserSession) GetSession(sessionID string) (UserCookie, error) {
-	log.Println("Getting session")
-	return UserCookie{}, nil
-}
+func generateID() uuid.UUID {
+	sessionID := uuid.New()
 
-func (u *UserSession) SetSession() {
-	log.Println("Setting session")
-}
+	_, ok := sessionStore[sessionID]
 
-func CheckSession(w http.ResponseWriter, r *http.Request) bool {
-	cookieSession, err := r.Cookie("sessionID")
-	if err != nil {
-		fmt.Println("creating cookie in memcache")
-		Session.Create()
-		Session.Expire = time.Now().Local()
-		Session.Expire.Add(time.Hour)
-		Session.SetSession()
-	} else {
-		fmt.Println("Found cookie, checking against Memcache")
-		ValidSession, err := Session.GetSession(cookieSession.Value)
-		fmt.Println(ValidSession)
-		return err == nil
+	if ok {
+		return generateID()
 	}
-	return true
+
+	return sessionID
+}
+
+func GetSession(sessionID uuid.UUID) (UserSession, error) {
+	id, ok := sessionStore[sessionID]
+
+	if !ok {
+		// TODO: abstract the error definition
+		return UserSession{}, errors.New("Session doesn't exist")
+	}
+
+	if id.MaximumExpiry.Before(time.Now()) {
+		return UserSession{}, errors.New("User logged out")
+	}
+
+	// TODO: this implementation doesn't handle the shorter expiry
+	// it should increment the time
+
+	return id, nil
 }

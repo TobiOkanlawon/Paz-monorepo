@@ -20,6 +20,7 @@
     </header>
     <div id="content-container">
       <aside id="sidebar">
+        <!-- <p id="sidebar-welcome-text">Welcome {.FirstName}</p> -->
         <nav>
           <ul>
             <li><a class="sidebar-link" href="/dashboard/home">Home</a></li>
@@ -33,8 +34,7 @@
 
 	<p>Logout</p>
       </aside>
-      
-      {{template "main" .}}
+	{{template "main" .}}
     </div>
     
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>

@@ -18,9 +18,17 @@
       <div class="loans-plans-right-side">
         <h2>Instant Loans</h2>
         <p>Get money fast against impromptu financial situations at 4% interest per month.</p>
-      <button class="primary">Get loan</button>
+	<button id="get-loans-button" class="primary">Get loan</button>
       </div>
     </div>
   </div>
 </main>
+
+<script>
+  const getLoanButton = document.getElementById("get-loans-button");
+
+  getLoanButton.addEventListener("click", function() {
+      window.location.assign("/dashboard/loans/get-loan")
+  })
+</script>
 {{end}}

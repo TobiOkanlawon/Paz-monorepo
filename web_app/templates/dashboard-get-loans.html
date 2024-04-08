@@ -1,0 +1,57 @@
+{{define "title"}}Loans{{end}}
+{{define "head"}}
+<link href="/static/dashboard/loans.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<main>
+  <h1>Get a loan today</h1>
+  <p>Fill this form to access our loan options</p>
+
+  <form method="POST" action="/dashboard/loans/get-loan">
+    {{.csrfField}}
+    <div class="form-control">
+      <label for="loan-amount">Loan Amount</label>
+      <input id="loan-amount" name="loan-amount" type="number" min="1000" value="" placeholder="How much would you like to borrow?" required="true"/>
+      {{if .Errors.LoanAmount}}
+      <div class="form-control-error-container">
+	<span>
+	  {{.Errors.LoanAmount}}
+	</span>
+      </div>
+      {{end}}
+      <!-- TODO: add regex validation -->
+    </div>
+
+    <div class="form-control">
+      <label for="term-duration">How long (in days) would you like to borrow the money for?</label>
+      <input id="term-duration" name="term-duration" type="number" min="3" max="1000" value="" placeholder="How long in days would you like to borrow the money?" required="true"/>
+      {{if .Errors.TermDuration}}
+      <div class="form-control-error-container">
+	<span>
+	  {{.Errors.TermDuration}}
+	</span>
+      </div>
+      {{end}}
+      <!-- TODO: add regex validation -->
+    </div>
+
+    {{if .ShowBVNField}}
+    <div class="form-control">
+      <label for="BVN">What's your BVN?'</label>
+      <input id="bvn" name="bvn" type="number" value="" placeholder="Eg: 1234729384" required="true"/>
+      <!-- TODO: validate the bvn with regex, bvns are only numbers -->
+      {{if .Errors.BVN}}
+      <div class="form-control-error-container">
+	<span>
+	  {{.Errors.BVN}}
+	</span>
+      </div>
+      {{end}}
+      <!-- TODO: add regex validation -->
+    </div>
+    {{end}}
+
+    <button type="submit" class="primary">Apply for a loan</button>
+  </form>
+</main>
+{{end}}

@@ -1,0 +1,45 @@
+{{define "title"}}Family Vault{{end}}
+{{define "head"}}
+<link href="/static/dashboard/family-vault-plan.css" rel="stylesheet"/>
+{{end}}
+{{define "main"}}
+<main>
+  <div class="heading-container">
+    <div class="heading-container-left">
+    <h1>{{.Information.Name}}</h1>
+    <p>{{.Information.Description}}</p>
+    </div>
+    <div class="heading-container-right">
+      <button class="primary" id="withdraw">Withdraw funds</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="summary-container">
+      <article class="plan-balance-container">
+	<h2>Total savings balance</h2>
+	<div class="plan-balance-container-content">
+	  <p>&#8358; {{.Balance}}</p>
+          <button id="instant-top-up" class="primary">Instant top-up</button>
+	</div>
+      </article>
+      <article class="family-members-container">
+	<h2>Family members</h2>
+	<div class="family-member-container-content">
+	  <p>{{.Information.NumberOfMembers}}</p>
+          <button id="add-new-members" class="primary">Add a new member</button>
+	</div>
+      </article>
+    </div>
+
+    <div class="recent-activity-container">
+      <h2>Recent Activity</h2>
+      <p>No activity</p>
+    </div>
+  </div>
+</main>
+
+<script>
+</script>
+{{end}}
+

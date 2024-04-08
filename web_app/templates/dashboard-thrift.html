@@ -14,66 +14,44 @@
     </div>
   </div>
 
+  {{if .Plans}}
   <section class="thrift-plans-container">
-    <article class="thrift-plan">
+    {{range .Plans}}
+    <article class="thrift-plan" data-id="{{.ID}}">
       <div class="thrift-plan-heading">
-	<h2>Southern Sisters</h2> 
-	<p>Women helping women, sisters helping sisters.</p>
+	<h2>{{.Name}}</h2> 
+	<p>{{.Description}}</p>
       </div>
       <div class="thrift-plan-middle">
-	<p>&#8358; 5,000.00</p>
-	<p>Per person/monthly</p>
+	<p>&#8358; {{.Amount}}</p>
+	<p>Per person/{{.Frequency}}</p>
       </div>
       <div class="thrift-plan-bottom">
+	{{if .IsCreator}}
         <p class="thrift-plan-owner-status">Group owner</p>
-	<p class="thrift-plan-member-amount"><strong>10</strong> members</p>
+	{{end}}
+	<p class="thrift-plan-member-amount"><strong>{{.NumberOfMembers}}</strong> members</p>
       </div>
     </article>
-
-    <article class="thrift-plan">
-      <div class="thrift-plan-heading">
-	<h2>Southern Sisters</h2> 
-	<p>Women helping women, sisters helping sisters.</p>
-      </div>
-      <div class="thrift-plan-middle">
-	<p>&#8358; 5,000.00</p>
-	<p>Per person/monthly</p>
-      </div>
-      <div class="thrift-plan-bottom">
-        <p class="thrift-plan-owner-status">Group owner</p>
-	<p class="thrift-plan-member-amount"><strong>10</strong> members</p>
-      </div>
-    </article>
-
-    <article class="thrift-plan">
-      <div class="thrift-plan-heading">
-	<h2>Southern Sisters</h2> 
-	<p>Women helping women, sisters helping sisters.</p>    
-      </div>
-      <div class="thrift-plan-middle">
-	<p>&#8358; 5,000.00</p>
-	<p>Per person/monthly</p>
-      </div>
-      <div class="thrift-plan-bottom">
-        <p class="thrift-plan-owner-status">Group owner</p>
-	<p class="thrift-plan-member-amount"><strong>10</strong> members</p>
-      </div>
-    </article>
-
-    <article class="thrift-plan">
-      <div class="thrift-plan-heading">
-	<h2>Southern Sisters</h2> 
-	<p>Women helping women, sisters helping sisters.</p>
-      </div>
-      <div class="thrift-plan-middle">
-	<p>&#8358; 5,000.00</p>
-	<p>Per person/monthly</p>
-      </div>
-      <div class="thrift-plan-bottom">
-        <p class="thrift-plan-owner-status">Group owner</p>
-	<p class="thrift-plan-member-amount"><strong>10</strong> members</p>
-      </div>
-    </article>
+    {{end}}
   </section>
+  {{else}}
+  <section class="thrift-plans-empty-container">
+    <img alt="No thrift plans" height="128" width="128" src="/static/images/empty.png"/>
+    <p class="empty-thrift-plans-text">You do not belong to any groups yet</p>
+  </section>
+  {{end}}
 </main>
+
+<script>
+  const plans = document.querySelectorAll("div[data-id]");
+  for (let plan of plans) {
+      plan.addEventListener('click', () => {
+	  const id = plan.getAttribute("data-id");
+	  if (!id) return;
+	  // TODO: there should be a mechanism for dynamically inserting URLs
+	  window.location.assign(`/dashboard/savings/thrift/${id}`);
+      })
+  }
+</script>
 {{end}}

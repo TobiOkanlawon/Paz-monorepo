@@ -1,0 +1,171 @@
+{{define "title"}}Family Vault{{end}} {{define "head"}}
+<link href="/static/css/solo-saver.css" rel="stylesheet" />
+{{end}} {{define "main"}}
+<main>
+  <div class="heading-container">
+    <div class="heading-container-left">
+      <h1>Paz Solo Saver</h1>
+      <p>Save money spontaneously with interest of up to 12% per annum.</p>
+    </div>
+    <div class="heading-container-right">
+      <button class="primary" id="withdraw">Withdraw funds</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <article class="savings-balance-container">
+      <div class="savings-balance-container-left">
+        <h2>Paz saver balance</h2>
+        <p>&#8358; {{.Balance}}</p>
+      </div>
+      <div class="savings-balance-container-right">
+        <button id="instant-top-up" class="primary">Instant top up</button>
+      </div>
+    </article>
+
+    <div class="activity-container">
+      <h2>Recent activity</h2>
+      <p>No activity</p>
+    </div>
+  </div>
+</main>
+
+<div class="modal-flex-container hidden" role="document">
+  <div id="modal-container">
+    <article class="modal">
+      <div class="modal-heading-container">
+        <h2 id="top-up-heading">Top-up your savings</h2>
+        <p>Save up the money that you'll regret spending</p>
+      </div>
+
+      <form id="savings-form" method="POST">
+        <div class="form-control">
+          <label for="top-up-amount">Top-up amount*</label>
+          <input
+            id="top-up-amount"
+            name="top-up-amount"
+            type="number"
+            min="1000"
+            required
+            placeholder="Enter how much you want to top-up"
+          />
+          <div class="form-control-error-container"></div>
+          <!-- TODO: add regex validation -->
+        </div>
+
+        <div class="form-control">
+          <label for="withdrawal-account"
+            >Select account to withdraw from*</label
+          >
+          <select
+            id="withdrawal-account"
+            name="withdrawal-account"
+            type="number"
+          >
+            <option value="">Select the account to withdraw from</option>
+            {{range .Information.Accounts}}
+            <option value="{{.ID}}">{{.Name}}</option>
+            {{end}}
+          </select>
+          <div class="form-control-error-container"></div>
+          <!-- TODO: add regex validation -->
+        </div>
+
+        <button id="process-payment-button" type="submit" class="primary">
+          Save
+        </button>
+      </form>
+    </article>
+  </div>
+  <div class="modal-overlay"></div>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+</div>
+
+<script>
+  const modal = document.querySelector(".modal-flex-container");
+  const overlay = document.querySelector(".modal-overlay");
+  const topUpButton = document.getElementById("instant-top-up");
+  const processPaymentButton = document.getElementById("process-payment-button");
+  const savingsForm = document.getElementById("savings-form");
+  const amount_in_k = document.getElementById("top-up-amount");
+  const csrfToken = {{.csrfToken}}
+
+  const openModal = function () {
+      modal.classList.remove("hidden");
+  };
+
+  const closeModal = function () {
+      modal.classList.add("hidden");
+  };
+
+  const sendPaymentToBackend = async function (referenceNumber, amount) {
+      console.log("It's getting here all right");
+      const data =  {
+	  Amount: amount,
+	  Account: 0,
+	  ReferenceNumber: referenceNumber,
+	  // sessionToken: "xxx",
+      }
+      const url = "/dashboard/savings/solo-saver"
+      const response = await fetch(url, {
+	  method: "POST",
+	  mode: "same-origin",
+	  cache: "no-cache",
+	  headers: {
+	      "Content-Type": "application/json",
+	      "X-CSRF-Token": csrfToken,
+	  },
+	  body: JSON.stringify(data),
+      })
+      return response.json();
+  }
+
+  const openPaystackModal = function (e) {
+      e.preventDefault();
+      let handler = PaystackPop.setup({
+	  key: 'pk_test_8a697e5a45403dae81cc0acc7e1df00784effa74',
+	  // Replace with your public key
+	  email: "{{.Information.EmailAddress}}",
+	  amount: amount_in_k.value * 100,
+	  // amount is multiplied by 100 so that it can be represented as kobos
+	  ref: ''+Math.floor((Math.random() * 1000000000) + 1),
+	  // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
+	  // label: "Optional string that replaces customer email"
+
+	  onClose: function () {
+	      // reset the form and close the modal.
+	      savingsForm.reset();
+	      closeModal();
+	  },
+
+	  callback: function(response){
+
+	      // send a request to the backend containing the
+	      // reference and the amount along with a csrf token to
+	      // prevent XSS, and the user's session token to be sure
+	      // that it's this user that sent the request.
+
+	      sendPaymentToBackend(response.reference, amount_in_k.value * 100);
+
+	      savingsForm.reset();
+	      closeModal();
+
+	      // make sure that the request retries on failure
+
+	      // TODO: Show the pending savings message
+	      // we are relaading to show the pending savings message
+	      // However, this is an inefficient method.
+	      // The better solution is to send a HTMx response from the sendPaymentToBackend route and move that into the template
+	      
+	      // window.location.reload();
+	  } 
+      });
+      handler.openIframe();
+  };
+
+  overlay.addEventListener("click", closeModal);
+  topUpButton.addEventListener("click", openModal);
+  processPaymentButton.addEventListener("click", openPaystackModal);
+</script>
+
+{{end}}
