@@ -28,6 +28,7 @@ type UserSession struct {
 	SessionID     uuid.UUID
 	MaximumExpiry time.Time
 	Role          string
+	AuthenticationStatus bool
 }
 
 // Role is Admin, or Basic. This is used to restrict access to the admin routes
@@ -42,6 +43,9 @@ func NewUserSession(userID uint, role string) UserCookie {
 	userSession.SessionID = generateID()
 	userSession.UserID = userID
 	userSession.Role = role
+	// We are assuming that this is only used when we want to log in
+	// TODO: there should be a refreshSession feature
+	userSession.AuthenticationStatus = true
 	// expiry should be set to about 5 minutes, this being a high
 	// value application
 	userSession.MaximumExpiry = time.Now().Add(5 * time.Hour)
@@ -78,6 +82,10 @@ func GetSession(sessionID uuid.UUID) (UserSession, error) {
 
 	if id.MaximumExpiry.Before(time.Now()) {
 		return UserSession{}, errors.New("User logged out")
+	}
+
+	if id.AuthenticationStatus == false {
+		return UserSession{}, errors.New("user is logged out")
 	}
 
 	// TODO: this implementation doesn't handle the shorter expiry

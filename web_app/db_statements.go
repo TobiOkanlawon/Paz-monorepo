@@ -6,17 +6,33 @@ const GetProfileScreenInformationStatement = `SELECT customer.first_name, custom
 
 const GetSavingsScreenInformationStatement = `SELECT solo_savings_account.balance_in_k FROM solo_savings_account WHERE solo_savings_account.customer_id = $1;`
 
-const GetFamilyVaultHomeScreenInformationStatement = `SELECT family_vault_plan.family_vault_plan_id, family_vault_plan.name, family_vault_plan.description, family_vault_plan.balance_in_k, family_vault_plan.creator_id FROM family_vault_plan, family_vault_plan_member WHERE family_vault_plan_member.customer_id = $1;`
+const GetFamilyVaultHomeScreenInformationStatement = `SELECT family_vault_plan.family_vault_plan_id, family_vault_plan.family_name, family_vault_plan.description, family_vault_plan.balance_in_k, family_vault_plan.creator_id FROM family_vault_plan, family_vault_plan_member WHERE family_vault_plan_member.customer_id = $1;`
 
-const GetFamilyVaultPlanScreenInformationStatement = `SELECT family_vault_plan.family_vault_plan_id, family_vault_plan.name, family_vault_plan.description, family_vault_plan.balance_in_k, family_vault_plan.creator_id FROM family_vault_plan, family_vault_plan_member WHERE family_vault_plan.family_vault_plan_id = $1 AND family_vault_plan_member.customer_id = $2;`
+const GetFamilyVaultPlanScreenInformationStatement = `SELECT family_vault_plan.family_vault_plan_id, family_vault_plan.family_name, family_vault_plan.description, family_vault_plan.balance_in_k, family_vault_plan.creator_id FROM family_vault_plan, family_vault_plan_member WHERE family_vault_plan.family_vault_plan_id = $1 AND family_vault_plan_member.customer_id = $2;`
 
-const GetSoloSaverScreenInformationStatement = `SELECT solo_savings_account.balance_in_k, customer.email FROM solo_savings_account, customer WHERE solo_savings_account.customer_id = $1;`;
+const GetSoloSaverScreenInformationStatement = `SELECT ssa.balance_in_k,
+       c.email,
+       CASE
+           WHEN EXISTS (
+               SELECT 1
+               FROM payment_processor_transaction AS p
+               WHERE p.customer_id = $1
+                 AND p.verification_status = 'PENDING'
+           )
+           THEN TRUE
+           ELSE FALSE
+       END AS has_pending_payment
+FROM solo_savings_account ssa
+JOIN customer c ON ssa.customer_id = c.customer_id
+WHERE ssa.customer_id = $1;`
 
 const GetTargetSavingsScreenInformationStatement = `SELECT tsp.target_savings_plan_id, tsp.name, tsp.description, tsp.balance_in_k, tsp.goal_in_k FROM target_savings_plan AS tsp where tsp.customer_id = $1;`
 
-const GetLoansScreenInformationStatement = `SELECT amount_owed_in_k FROM loans_account WHERE customer_id = $1;`;
+const GetLoansScreenInformationStatement = `SELECT amount_owed_in_k FROM loans_account WHERE customer_id = $1;`
 
-const CreateSoloSavingsPendingTransactionStatement = ``;
+const CreatePaymentProcessorPendingTransaction = `INSERT INTO payment_processor_transaction (customer_id, plan_id, reference_number, payment_originator, payment_amount_in_k) VALUES ($1, $2, $3, $4, $5);`
+
+const GetPaystackVerificationInformation = `SELECT customer_id, plan_id, payment_originator FROM payment_processor_transaction WHERE reference_number = $1`
 
 const AuthenticateUserStatement = `SELECT customer.customer_id, customer.email, CAST((admin.admin_id = customer.customer_id) AS BOOLEAN), customer.email_is_verified, password_hash.hash FROM customer, admin, password_hash WHERE customer.email = $1 AND customer.customer_id = password_hash.customer_id;`
 
@@ -40,13 +56,52 @@ investment_account_insert AS (
 INSERT INTO password_hash (customer_id, hash)
 SELECT customer_id, $5
 FROM new_customer;
-`;
+`
 
-const CreateLoanApplicationStatement = `INSERT INTO loan_application (loans_account_id, customer_id, amount_requested_in_k, duration_requested_in_days) VALUES (SELECT $1, $2, $3, $4);`
+const CreateLoanApplicationStatement = `
+INSERT INTO loan_application (loans_account_id, amount_requested_in_k, duration_requested_in_days) (SELECT account_id, $2, $3 FROM loans_account WHERE customer_id = $1);
+`
+
 // do the one for the loans and investments accounts too
 
 // const GetThriftScreenInformationStatement = `SELECT thrift_id, `
 
 // TODO: a better implementation is to count the rows returned.
-// 
 const GetLoanScreenInformationStatement = `SELECT bvn FROM bvn WHERE customer_id = $1;`
+
+const CreateFamilyVaultStatement = `WITH new_family_vault AS (
+    INSERT INTO family_vault_plan (creator_id, family_name, description, contribution_amount_in_k, balance_in_k, savings_duration_in_d, savings_frequency)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING family_vault_plan_id
+),
+family_vault_plan_creator_insert AS (
+    INSERT INTO family_vault_plan_member (customer_id, family_vault_plan_id)
+    SELECT $1, family_vault_plan_id FROM new_family_vault
+)
+INSERT INTO family_vault_plan_member (customer_id, family_vault_plan_id)
+SELECT c.customer_id, nfv.family_vault_plan_id
+FROM new_family_vault nfv
+JOIN customer c ON c.email = $8
+RETURNING nfv.family_vault_plan_id;`
+
+const UpdateSoloSaverPaymentInformationStatement = `
+WITH transaction_update AS (
+  UPDATE payment_processor_transaction
+  SET verification_status = 'SUCCESSFUL',
+  fulfillment_status = 'SUCCESSFUL',
+  payment_amount_in_k = $1,
+  customer_id = $2
+  WHERE reference_number = $3
+  AND verification_status = 'PENDING'
+  RETURNING payment_amount_in_k, customer_id
+)
+
+-- The pending check makes sure that we aren't updating a previously successful payment (that could happen in a replay attack)
+
+UPDATE solo_savings_account
+SET balance_in_k = balance_in_k + transaction_update.payment_amount_in_k
+FROM transaction_update WHERE solo_savings_account.customer_id = transaction_update.customer_id;
+`
+const UpdateSoloSaverPaymentFailureStatement = `
+UPDATE 
+`;

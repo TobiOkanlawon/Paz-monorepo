@@ -4,13 +4,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 )
@@ -20,10 +23,9 @@ func NewHandlerManager(partialsManager IPartialsManager, store IStore, cookieSto
 }
 
 func (h *HandlerManager) indexGetHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: this is the home page
-	// TODO: check auth status, then redirect accordingly
-	// i.e if authed, redirect to dashboard home
-	w.WriteHeader(200)
+
+	// For the while that we don't have an introductory website
+	http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 }
 
 func (h *HandlerManager) loginGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,11 +33,9 @@ func (h *HandlerManager) loginGetHandler(w http.ResponseWriter, r *http.Request)
 	// route them to the dashboard if they're logged in
 	// TODO: create middleware for automatic redirection based on auth status
 
-	// TODO: Check that each appropriate route returns a content-type
 	w.Header().Add("Content-Type", "text/html")
 	tmpl, err := template.ParseFiles("./web_app/templates/login.html", "./web_app/templates/layouts/pre_auth-base.html")
-	// TODO: implement a 500 page
-	// TODO: handle static files with chi router
+
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		log.Printf("error %q from url %q", err, "/login")
@@ -52,7 +52,7 @@ func (h *HandlerManager) loginGetHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -262,7 +262,8 @@ func (h *HandlerManager) forgotPasswordGetHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	w.WriteHeader(200)
+	// TODO: not implemented yet, so it's a teapot
+	w.WriteHeader(http.StatusTeapot)
 }
 
 func (h *HandlerManager) resetPasswordGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -300,39 +301,13 @@ func (h *HandlerManager) dashboardHomeGetHandler(w http.ResponseWriter, r *http.
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	session, err := h.cookieStore.Get(r, "session")
-
-	if err != nil {
-		// if there is no session, delete the cookie and redirect to the login page
-		session.Options.MaxAge = -1
-		session.Save(r, w)
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-	}
-
-	sessionCookie, err := getSessionCookie(session)
-
-	if err != nil {
-		// cookie doesn't exist
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-	}
-
-	userSession, err := GetSession(sessionCookie.SessionID)
-
-	if err != nil {
-		// if the session is invalid, delete the cookie and redirect to the login page
-		session.Options.MaxAge = -1
-		session.Save(r, w)
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-	}
-
+	userSession := h.getSessionOrLogout(w, r)
 	homeScreenInformation, err := h.store.GetHomeScreenInformation(userSession.UserID)
 
 	if err == sql.ErrNoRows {
 		// then this user doesn't exist, or there's a problem with the data in the database. Either way, we have nothing to show this user
 		log.Printf("unusual edge case hit on dashboard/home route. sqlNoRows returned from GetHomeScreenInformation. %s \n", err)
-		session.Options.MaxAge = -1
-		session.Save(r, w)
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
+		h.logout(w, r)
 	}
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
@@ -342,7 +317,7 @@ func (h *HandlerManager) dashboardHomeGetHandler(w http.ResponseWriter, r *http.
 		"Investments": homeScreenInformation.InvestmentBalance,
 		"Activities":  homeScreenInformation.Activities,
 		// "ShowModal":   homeScreenInformation.ShowModal,
-		"ShowModal": true,
+		"ShowModal": false,
 	})
 
 	if err != nil {
@@ -364,31 +339,14 @@ func (h *HandlerManager) profileGetHandler(w http.ResponseWriter, r *http.Reques
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	// 	session, err := h.cookieStore.Get(r, "session")
-
-	// 	// TODO: validate the session
-
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// userFromSession, err := getCookie(session)
-	var userID uint = 1
-	profileInformation, err := h.store.GetProfileScreenInformation(userID)
+	userSession := h.getSessionOrLogout(w, r)
+	profileInformation, err := h.store.GetProfileScreenInformation(userSession.UserID)
 
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	// 	// update the session, just in case there has been a change
-	// 	session.Values["user"] = user
-	// 	session.Save(r, w)
-
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		"Information":    profileInformation,
@@ -413,8 +371,9 @@ func (h *HandlerManager) savingsGetHandler(w http.ResponseWriter, r *http.Reques
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	var userID uint = 1
-	savingsInformation, err := h.store.GetSavingsScreenInformation(userID)
+	userSession := h.getSessionOrLogout(w, r)
+
+	savingsInformation, err := h.store.GetSavingsScreenInformation(userSession.UserID)
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -440,23 +399,7 @@ func (h *HandlerManager) loansGetHandler(w http.ResponseWriter, r *http.Request)
 		"./web_app/templates/dashboard-loans.html",
 	}
 
-	session, err := h.cookieStore.Get(r, "session")
-	cookie, err := getSessionCookie(session)
-
-	if err != nil {
-		// TODO: implement a redirect instead
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-		log.Printf("failed to get user cookie")
-		return
-	}
-
-	userSession, err := GetSession(cookie.SessionID)
-
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-		log.Printf("session retrieval error: %s", err)
-		return
-	}
+	userSession := h.getSessionOrLogout(w, r)
 
 	loansScreenInformation, err := h.store.GetLoansScreenInformation(userSession.UserID)
 
@@ -501,11 +444,17 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 
 	information, err := h.store.GetLoanScreenInformation(userSession.UserID)
 
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		log.Printf("error %q from url %q", err, r.URL.Path)
+		return
+	}
+
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		csrf.TemplateTag: csrf.TemplateField(r),
-		"showBVNField": !information.HasValidBVN,
+		"ShowBVNField": !information.HasValidBVN,
 	})
 
 	if err != nil {
@@ -519,6 +468,8 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 
 func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Request) {
 
+	userSession := h.getSessionOrLogout(w, r)
+	
 	w.Header().Add("Content-Type", "text/html")
 	r.ParseForm()
 	amount, err := strconv.ParseUint(r.FormValue("loan-amount"), 10, 64)
@@ -534,33 +485,22 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusUnprocessableEntity)
 	}
 
-	session, err := h.cookieStore.Get(r, "session")
+	bvn := r.PostFormValue("bvn")
+	var transformedBvn uint64
+	if bvn != "" {
+		transformedBvn, err = strconv.ParseUint(bvn, 10, 64)
 
-	if err != nil {
-		log.Fatal(err)
+		if err != nil {
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			log.Printf("error %q from url %q", err, r.URL.Path)
+			return
+		}
 	}
 
-	sessionCookie, err := getSessionCookie(session)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	userSession, err := GetSession(sessionCookie.SessionID)
-
-	if err != nil {
-		// if the session is invalid, delete the cookie and redirect to the login page
-		session.Options.MaxAge = -1
-		session.Save(r, w)
-		http.Redirect(w, r, "/dashboard/login", http.StatusUnauthorized)
-	}
-
-	_, err = h.store.CreateLoanApplication(userSession.UserID, amount , duration)
+	// TODO: this transformedBVN implementation is not clean, but it's what I've got for now
+	_, err = h.store.CreateLoanApplication(userSession.UserID, amount, duration, transformedBvn)
 
 	// TODO: handle validation and CSRF
-
-	
-	log.Println("We are here");
 
 	if err != nil {
 		var errorsMap = make(map[string]string)
@@ -604,6 +544,9 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *HandlerManager) investmentsGetHandler(w http.ResponseWriter, r *http.Request) {
+
+	// TODO: while we are still using the stop-gap implementation, we don't need the userSession. However, we still use it to log out the user
+	_ = h.getSessionOrLogout(w, r)
 	w.Header().Add("Content-Type", "text/html")
 	templateFiles := []string{
 		"./web_app/templates/layouts/dashboard-base.html",
@@ -621,6 +564,136 @@ func (h *HandlerManager) investmentsGetHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(200)
+}
+
+func (h *HandlerManager) investmentsFormGetHandler(w http.ResponseWriter, r *http.Request) {
+	_ = h.getSessionOrLogout(w, r)
+	w.Header().Add("Content-Type", "text/html")
+	templateFiles := []string{
+		"./web_app/templates/layouts/dashboard-base.html",
+		"./web_app/templates/dashboard-investments-form.html",
+	}
+
+	tmpl := template.Must(template.ParseFiles(templateFiles...))
+
+	err := tmpl.ExecuteTemplate(w, "base", nil)
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		log.Printf("error %q from url %q", err, r.URL.Path)
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/html")
+
+	userSession := h.getSessionOrLogout(w, r)
+	r.ParseForm()
+	var errorsMap = make(map[string]string)
+	
+	employmentStatus := r.PostFormValue("employment-status")
+
+	if employmentStatus == "" {
+		errorsMap["EmploymentStatus"] = "Something seems wrong with this field"
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+	
+	// TODO: here, if the conversion fails, perhaps because of a malicious entry, there won't be any repercussions
+	// TODO: FIX THIS
+
+	yearOfEmploymentValue := r.PostFormValue("date-of-employment")
+
+	if yearOfEmploymentValue == "" {
+		errorsMap["DateOfEmployment"] = "This field is required"
+	}
+
+	convertedYearOfEmployment, err := time.Parse("YYYY-MM-DD", yearOfEmploymentValue);
+
+	employerName := r.PostFormValue("employer-name");
+
+	if employerName == "" {
+		// TODO: make a validation abstraction
+		errorsMap["EmployerName"] = "This field is required"
+	}
+
+	amount, err := strconv.ParseUint(r.PostFormValue("investment-amount"), 10, 64)
+
+	if err != nil {
+		errorsMap["InvestmentAmount"] = "Something seems wrong with this field"
+	}
+
+	tenure, err := strconv.ParseUint(r.PostFormValue("investment-tenure"), 10, 64)
+
+	if err != nil {
+		errorsMap["InvestmentTenure"] = "Something seems wrong with this field"
+	}
+
+	taxIdentificationNumber, err := strconv.ParseUint(r.PostFormValue("TIN"), 10, 64)
+
+	if err != nil {
+		errorsMap["TIN"] = "Something seems wrong with this field"
+	}
+
+	bankAccountName := r.PostFormValue("bank-account-name")
+
+	if bankAccountName == "" {
+		errorsMap["BankAccountName"] = "This field is required"
+	}
+
+	bankAccountNumber, err := strconv.ParseUint(r.PostFormValue("bank-account-number"), 10, 64)
+
+	if err != nil {
+		errorsMap["BankAccountNumber"] = "Something seems wrong with this field"
+	}
+
+	_, err = h.store.CreateInvestmentApplication(userSession.UserID, employmentStatus, convertedYearOfEmployment, employerName, amount, tenure, taxIdentificationNumber, bankAccountName, bankAccountNumber)
+
+	// TODO: handle validation and CSRF
+
+	if err != nil {
+		errorsMap["Error"] = "An error occurred"
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		log.Println(err);
+
+		// this is the default message
+		// errorsMap[""] = "An error occured"
+
+		// if err == ErrAccountDoesNotExist {
+		// 	errorsMap["Email"] = "Account does not exist"
+		// }
+
+		// if err == ErrUserNotVerified {
+		// 	errorsMap["Email"] = "Verify your email before trying to log in"
+		// }
+
+		// if err == ErrPasswordIncorrect {
+		// 	errorsMap["Email"] = "Email or password is incorrect"
+		// }
+
+		tmpl, err := template.ParseFiles(
+			"./web_app/templates/layouts/dashboard-base.html",
+			"./web_app/templates/dashboard-investments.html",
+		)
+
+		if err != nil {
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		}
+
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Errors":         errorsMap,
+			csrf.TemplateTag: csrf.TemplateField(r),
+		})
+		return
+	}
+
+	// TODO: there should be some sort of response sent back to the user when they finish filling the form
+
+	http.Redirect(w, r, "/dashboard/investments", http.StatusFound)
 }
 
 // TODO: This is a HTMX route. Check for accuracy later
@@ -678,14 +751,42 @@ func (h *HandlerManager) familyVaultGetHandler(w http.ResponseWriter, r *http.Re
 		"./web_app/templates/dashboard-savings-family.html",
 	}
 
-	var userID uint = 1
-	familyVaultInformation, _ := h.store.GetFamilyVaultScreenInformation(userID)
+	
+	session, err := h.cookieStore.Get(r, "session")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sessionCookie, err := getSessionCookie(session)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userSession, err := GetSession(sessionCookie.SessionID)
+
+	if err != nil {
+		// if the session is invalid, delete the cookie and redirect to the login page
+		session.Options.MaxAge = -1
+		session.Save(r, w)
+		http.Redirect(w, r, "/login", http.StatusUnauthorized)
+	}
+	
+	familyVaultInformation, err := h.store.GetFamilyVaultScreenInformation(userSession.UserID)
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		log.Printf("error %q from url %q", err, r.URL.Path)
+		return
+	}
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	err := tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		"Balance": familyVaultInformation.Balance,
 		"Plans":   familyVaultInformation.FamilyVaultBasicPlans,
+		csrf.TemplateTag: csrf.TemplateField(r),
 	})
 
 	if err != nil {
@@ -698,7 +799,35 @@ func (h *HandlerManager) familyVaultGetHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (h *HandlerManager) familyVaultPostHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Do this
+	w.Header().Add("Content-Type", "text/html")
+	// TODO: Should return a fragment for htmx requests
+
+	userSession := h.getSessionOrLogout(w, r)
+
+	r.ParseForm()
+	familyName := r.PostFormValue("family-name")
+	familyMember := r.PostFormValue("family-member")
+	amount, err := strconv.ParseFloat(r.PostFormValue("amount"), 64)
+	savingsFrequency := r.PostFormValue("savings-frequency")
+	savingsDuration, err := strconv.ParseInt(r.PostFormValue("duration"), 10, 64)
+
+	// TODO: should handle form validation here
+
+	if err != nil {
+		// TODO: return a validation error to the client here.
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+	}
+
+	information, err := h.store.CreateNewFamilyVault(userSession.UserID, familyName, familyMember, amount, savingsFrequency, savingsDuration)
+
+	if err != nil {
+		log.Printf("An error occured while trying to create a family vault %s", err)
+		h.logout(w, r)
+		return
+	}
+	// TODO: redirect on success
+	// TODO: abstract the URLs
+	http.Redirect(w, r, fmt.Sprintf("/dashboard/savings/family-vault/%d", information.PlanID), http.StatusOK)
 }
 
 func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -708,18 +837,19 @@ func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *htt
 		"./web_app/templates/dashboard-savings-family-plan.html",
 	}
 
-	var userID uint = 1
+	userSession := h.getSessionOrLogout(w, r)
+
 	planID := chi.URLParam(r, "planID")
 	convertedPlanID, err := strconv.Atoi(planID)
 
 	if err != nil {
 		// TODO: return a 404 here
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		http.Error(w, "Something went wrong", http.StatusNotFound)
 		log.Printf("error %q from url %q", err, r.URL.Path)
 		return
 	}
 
-	familyVaultPlanInformation, err := h.store.GetFamilyVaultPlanScreenInformation(userID, convertedPlanID)
+	familyVaultPlanInformation, err := h.store.GetFamilyVaultPlanScreenInformation(userSession.UserID, convertedPlanID)
 
 	if err != nil {
 		// TODO: here we would want to check the type of error and check for why it's having that error then display an appropriate error to the user with an appropriate error code
@@ -733,6 +863,9 @@ func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *htt
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		"Information": familyVaultPlanInformation,
 		"Balance":     familyVaultPlanInformation.Balance,
+		"csrfToken":   csrf.Token(r),
+		"ReferenceNumber": h.generatePaymentUUID(),
+		"PlanID": planID,
 	})
 
 	if err != nil {
@@ -741,22 +874,20 @@ func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *HandlerManager) soloSavingsAddFunds(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
+
+	userSession := h.getSessionOrLogout(w, r)
 
 	decoder := json.NewDecoder(r.Body)
 	var data SoloSaverAddFundsRequestType
 
 	err := decoder.Decode(&data)
 
-	var userID uint = 1
-
 	// we receive the data from the frontend, then we update the DB with the information as a pending payment.
-
-	_, err = h.store.CreateSoloSavingsPendingTransaction(userID, data.Amount, data.ReferenceNumber)
 
 	// when that payment gets verified, then it becomes a
 	// successful payment.
@@ -769,7 +900,88 @@ func (h *HandlerManager) soloSavingsAddFunds(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	log.Printf("%v", data)
+	// the planID field is 99909990 by convention. It doesn't mean anything for soloSavings
+	_, err = h.store.CreatePayment(userSession.UserID, 99909990, data.ReferenceNumber, "SOLO_SAVINGS", data.Amount)
+
+	if err != nil {
+		http.Error(w, "Something went wrong while trying to save your transaction", http.StatusInternalServerError)
+		return 
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *HandlerManager) familySavingsAddFunds(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+
+	userSession := h.getSessionOrLogout(w, r)
+
+	decoder := json.NewDecoder(r.Body)
+	var data SoloSaverAddFundsRequestType
+
+	err := decoder.Decode(&data)
+
+	planID := chi.URLParam(r, "planID")
+	convertedPlanID, err := strconv.Atoi(planID)
+
+	// we receive the data from the frontend, then we update the DB with the information as a pending payment.
+
+	// when that payment gets verified, then it becomes a
+	// successful payment.
+
+	// but it hardly gets verified in this flow
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusBadRequest)
+		log.Printf("error %q from url %q", err, r.URL.Path)
+		return
+	}
+
+	// the planID field is 99909990 by convention. It doesn't mean anything for soloSavings
+	_, err = h.store.CreatePayment(userSession.UserID, uint(convertedPlanID), data.ReferenceNumber, "FAMILY_SAVINGS", data.Amount)
+
+	if err != nil {
+		http.Error(w, "Something went wrong while trying to save your transaction", http.StatusInternalServerError)
+		return 
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *HandlerManager) targetSavingsAddFunds(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+
+	userSession := h.getSessionOrLogout(w, r)
+
+	decoder := json.NewDecoder(r.Body)
+	var data SoloSaverAddFundsRequestType
+
+	err := decoder.Decode(&data)
+
+	planID := chi.URLParam(r, "planID")
+	convertedPlanID, err := strconv.Atoi(planID)
+
+	// we receive the data from the frontend, then we update the DB with the information as a pending payment.
+
+	// when that payment gets verified, then it becomes a
+	// successful payment.
+
+	// but it hardly gets verified in this flow
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusBadRequest)
+		log.Printf("error %q from url %q", err, r.URL.Path)
+		return
+	}
+
+	// the planID field is 99909990 by convention. It doesn't mean anything for soloSavings
+	_, err = h.store.CreatePayment(userSession.UserID, uint(convertedPlanID), data.ReferenceNumber, "TARGET_SAVINGS", data.Amount)
+
+	if err != nil {
+		http.Error(w, "Something went wrong while trying to save your transaction", http.StatusInternalServerError)
+		return 
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -780,8 +992,8 @@ func (h *HandlerManager) soloSavingsGetHandler(w http.ResponseWriter, r *http.Re
 		"./web_app/templates/dashboard-savings-solo.html",
 	}
 
-	var userID uint = 1
-	savingsInformation, err := h.store.GetSoloSaverScreenInformation(userID)
+	userSession := h.getSessionOrLogout(w, r)
+	savingsInformation, err := h.store.GetSoloSaverScreenInformation(userSession.UserID)
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -795,6 +1007,9 @@ func (h *HandlerManager) soloSavingsGetHandler(w http.ResponseWriter, r *http.Re
 		"Information": savingsInformation,
 		"Balance":     humanize.Comma(int64(savingsInformation.Balance)),
 		"csrfToken":   csrf.Token(r),
+		"ReferenceNumber": h.generatePaymentUUID(),
+		"PublicKey": h.paystackPublicKey,
+		"HasPendingPayment": savingsInformation.HasPendingPayment,
 	})
 
 	if err != nil {
@@ -813,13 +1028,14 @@ func (h *HandlerManager) targetSavingsGetHandler(w http.ResponseWriter, r *http.
 		"./web_app/templates/dashboard-savings-target.html",
 	}
 
-	var userID uint = 1
-	targetSavingsInformation, err := h.store.GetTargetSavingsScreenInformation(userID)
+	userSession := h.getSessionOrLogout(w, r)
+	targetSavingsInformation, err := h.store.GetTargetSavingsScreenInformation(userSession.UserID)
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		"Information": targetSavingsInformation,
+		csrf.TemplateTag: csrf.TemplateField(r),
 	})
 
 	if err != nil {
@@ -829,6 +1045,15 @@ func (h *HandlerManager) targetSavingsGetHandler(w http.ResponseWriter, r *http.
 	}
 
 	w.WriteHeader(200)
+}
+
+func (h *HandlerManager) targetSavingsPostHandler(w http.ResponseWriter, r *http.Request) {
+	// w.Header().Add("Content-Type", "text/html")
+	// userSession := h.getSessionOrLogout(w, r)
+
+	// r.ParseForm()
+
+	
 }
 
 func (h *HandlerManager) thriftGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -952,6 +1177,10 @@ func (h *HandlerManager) thriftPlanGetHandler(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(200)
 }
 
+func (h *HandlerManager) logoutGetHandler(w http.ResponseWriter, r *http.Request) {
+	h.logout(w, r)
+}
+
 // getSessionCookie returns a user from session s
 // on error returns an empty user
 func getSessionCookie(s *sessions.Session) (*UserCookie, error) {
@@ -968,4 +1197,57 @@ func storeSessionCookie(s *sessions.Session, r *http.Request, w http.ResponseWri
 	// TODO: https://pkg.go.dev/github.com/gorilla/sessions#CookieStore.MaxAge states that we should check for error while saving in prod mode
 	s.Values["session_token"] = sessionCookie
 	s.Save(r, w)
+}
+
+func (h *HandlerManager) getSessionOrLogout(w http.ResponseWriter, r *http.Request) (UserSession) {
+	session, err := h.cookieStore.Get(r, "session")
+
+	if err != nil {
+		// session could not be decoded, for some reason
+		// TODO: Find out what it means for the session to not be decoded
+		log.Printf("session could not be decoded: %s \n", err)
+	}
+
+	sessionCookie, err := getSessionCookie(session)
+
+	if err != nil {
+		// cookie doesn't exist
+		h.logout(w, r)
+	}
+
+	userSession, err := GetSession(sessionCookie.SessionID)
+
+	if err != nil {
+		// if the session is invalid, delete the cookie and redirect to the login pag
+
+		h.logout(w, r)
+	}
+
+	return userSession
+}
+
+func (h *HandlerManager) logout(w http.ResponseWriter, r *http.Request) {
+
+	session, err := h.cookieStore.Get(r, "session")
+
+	if err != nil {
+		// session could not be decoded
+		log.Printf("session could not be decoded: %s \n", err)
+	}
+
+	session.Options.MaxAge = -1
+	session.Save(r, w)
+	http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+}
+
+// generates UUIDs for payment related purposes
+func (h *HandlerManager) generatePaymentUUID() uuid.UUID {
+	
+// This is the better solution, but we can use the less well engineered one for now
+// generate a UUID, check the database that it doesn't already exist
+// then return it if it doesn't, if it does, start again
+
+// There's an edge case here, it's hard to hit, but there's a possible race condition on the UUID and check thing, so a lock would be the actually totally correct solution. However, since it's an almost impossible edge case, it'll just be overengineering
+
+	return uuid.New()
 }

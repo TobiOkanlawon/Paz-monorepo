@@ -52,6 +52,7 @@
 	<p>Begin your journey to financial freedom</p>
       </div>
       <form action="/dashboard/savings/family-vault" method="POST">
+	{{.csrfField}}
       	<div class="form-control">
           <label for="family-name">Famly name*</label>
           <input id="family-name" name="family-name" type="text" placeholder="Enter your family name" required/>
@@ -60,7 +61,7 @@
 	</div>
 
 	<div class="form-control">
-          <label for="family-member">Add a family member's email address'</label>
+          <label for="family-member">Add a family member's email address</label>
           <input id="family-member" name="family-member" type="text" placeholder="Enter your family member's email address" required/>
 	  <div class="form-control-error-container"></div>
 	  <!-- TODO: add regex validation -->
@@ -88,7 +89,7 @@
 
 	<div class="form-control">
           <label for="duration">Select a savings duration*</label>
-          <input id="duration" name="duration" type="number" placeholder="Enter a duration in months" min="1" required/>
+          <input id="duration" name="duration" type="number" placeholder="Enter a duration in days" min="1" required/>
 	  <div class="form-control-error-container"></div>
 	  <!-- TODO: add regex validation -->
 	</div>	

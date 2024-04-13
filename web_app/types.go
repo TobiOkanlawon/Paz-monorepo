@@ -1,8 +1,10 @@
 package web_app
 
 import (
-	"github.com/gorilla/sessions"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 )
 
 type IStore interface {
@@ -17,10 +19,15 @@ type IStore interface {
 	GetTargetSavingsScreenInformation(userID uint) (TargetSavingsScreenInformation, error)
 	GetTargetSavingsPlanScreenInformation(userID uint, planID int) (TargetSavingsPlanScreenInformation, error)
 	GetLoansScreenInformation(userID uint) (LoansScreenInformation, error)
-	CreateLoanApplication(userID uint, amount uint64, termDuration uint64) (LoanApplicationInformation, error)
+	CreateLoanApplication(userID uint, amount uint64, termDuration uint64, bvn uint64) (LoanApplicationInformation, error)
 	GetThriftScreenInformation(userID uint) (ThriftScreenInformation, error)
-	CreateSoloSavingsPendingTransaction(userID uint, amount int64, refNo string) (TransactionInformation, error)
+	CreatePayment(userID, planID uint, referenceNumber uuid.UUID, paymentoriginator string, amountInK int64) (PaymentInformation, error)
 	GetLoanScreenInformation(userID uint) (GetLoanScreenInformation, error)
+	CreateNewFamilyVault(userID uint, familyName, familyMemberEmail string, amount float64, frequency string, duration int64) (FamilyVaultInformation, error)
+	GetPaystackVerificationInformation(referenceNumber string) (PaystackTransactionInformation, error)
+	UpdateSoloSaverPaymentInformation(amountInK uint64, customerID uint, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
+	UpdateSoloSaverPaymentFailure(referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
+	CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error)
 }
 
 type User struct {
@@ -98,9 +105,10 @@ type FamilyVaultBasicPlan struct {
 }
 
 type SoloSaverScreenInformation struct {
-	Balance      uint64
-	Accounts     []DBUserBankAccount
-	EmailAddress string
+	Balance           uint64
+	Accounts          []DBUserBankAccount
+	EmailAddress      string
+	HasPendingPayment bool
 }
 
 type TargetSavingsScreenInformation struct {
@@ -164,7 +172,7 @@ type VerificationData struct {
 type SoloSaverAddFundsRequestType struct {
 	Amount          int64
 	Account         int64
-	ReferenceNumber string
+	ReferenceNumber uuid.UUID
 	// SessionToken string
 }
 
@@ -185,9 +193,38 @@ type RegisterPostInformation struct {
 }
 
 type LoanApplicationInformation struct {
-	
 }
 
 type GetLoanScreenInformation struct {
 	HasValidBVN bool
+}
+
+type FamilyVaultInformation struct {
+	PlanID uint
+}
+
+type PaystackTransactionInformation struct {
+	// PaymentOriginator should be an enum type
+	// as well as verification status
+	CustomerID                uint
+	PlanID                    uint
+	ReferenceNumber           uuid.UUID
+	PaymentOriginator         string
+	PaymentAmountInKobo       int64
+	FulfillmentStatus         string
+	FulfillmentFailureReason  string
+	VerificationStatus        string
+	VerificationFailureReason string
+	CreatedAt                 time.Time
+	VerifiedAt                time.Time
+}
+
+type SoloSaverPaymentInformation struct {
+}
+
+type PaymentInformation struct {
+}
+
+type InvestmentApplicationInformation struct {
+	
 }

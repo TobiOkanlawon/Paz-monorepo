@@ -19,7 +19,11 @@
         <p>&#8358; {{.Balance}}</p>
       </div>
       <div class="savings-balance-container-right">
+	{{if .HasPendingPayment}}
+	<p>Savings Top-Up Pending</p>
+	{{else}}
         <button id="instant-top-up" class="primary">Instant top up</button>
+	{{end}}
       </div>
     </article>
 
@@ -30,7 +34,16 @@
   </div>
 </main>
 
-<div class="modal-flex-container hidden" role="document">
+<div class="modal-flex-container hidden" id="withdraw-modal">
+  <div id="modal-container">
+    <article class="modal">
+      
+    </article>
+  </div>
+  <div class="modal-overlay"></div>
+</div>
+
+<div class="modal-flex-container hidden" id="top-up-modal" role="document">
   <div id="modal-container">
     <article class="modal">
       <div class="modal-heading-container">
@@ -47,29 +60,29 @@
             type="number"
             min="1000"
             required
-            placeholder="Enter how much you want to top-up"
+            placeholder="How much would you like to save?"
           />
           <div class="form-control-error-container"></div>
           <!-- TODO: add regex validation -->
         </div>
 
-        <div class="form-control">
-          <label for="withdrawal-account"
-            >Select account to withdraw from*</label
-          >
-          <select
-            id="withdrawal-account"
-            name="withdrawal-account"
-            type="number"
-          >
-            <option value="">Select the account to withdraw from</option>
-            {{range .Information.Accounts}}
-            <option value="{{.ID}}">{{.Name}}</option>
-            {{end}}
-          </select>
-          <div class="form-control-error-container"></div>
-          <!-- TODO: add regex validation -->
-        </div>
+        <!-- <div class="form-control"> -->
+        <!--   <label for="withdrawal-account" -->
+        <!--     >Select account to withdraw from*</label -->
+        <!--   > -->
+        <!--   <select -->
+        <!--     id="withdrawal-account" -->
+        <!--     name="withdrawal-account" -->
+        <!--     type="number" -->
+        <!--   > -->
+        <!--     <option value="">Select the account to withdraw from</option> -->
+        <!--     {{range .Information.Accounts}} -->
+        <!--     <option value="{{.ID}}">{{.Name}}</option> -->
+        <!--     {{end}} -->
+        <!--   </select> -->
+        <!--   <div class="form-control-error-container"></div> -->
+        <!--   <\!-- TODO: add regex validation -\-> -->
+        <!-- </div> -->
 
         <button id="process-payment-button" type="submit" class="primary">
           Save
@@ -82,29 +95,52 @@
 </div>
 
 <script>
-  const modal = document.querySelector(".modal-flex-container");
-  const overlay = document.querySelector(".modal-overlay");
+  const topUpModal = document.querySelector("#top-up-modal");
+  const withdrawModal = document.querySelector("#withdraw-modal");
+  const allOverlays = document.querySelectorAll(".modal-overlay");
   const topUpButton = document.getElementById("instant-top-up");
+  const withdrawButton = document.getElementById("withdraw");
   const processPaymentButton = document.getElementById("process-payment-button");
   const savingsForm = document.getElementById("savings-form");
-  const amount_in_k = document.getElementById("top-up-amount");
+  const amount = document.getElementById("top-up-amount");
   const csrfToken = {{.csrfToken}}
+  const referenceNumber = {{.ReferenceNumber}}
 
-  const openModal = function () {
-      modal.classList.remove("hidden");
+  const getCookie = function(cookieName) {
+      const name = cookieName + "=";
+      const cDecoded = decodeURIComponent(document.cookie);
+      //to be careful
+      const cArr = cDecoded.split('; ');
+      let res;
+      cArr.forEach(val => {
+	  if (val.indexOf(name) === 0) res = val.substring(name.length);
+      })
+      return res
+  }
+
+  const sessionToken = getCookie("session")
+
+  const openTopUpModal = function () {
+      topUpModal.classList.remove("hidden");
   };
 
-  const closeModal = function () {
-      modal.classList.add("hidden");
+  const openWithdrawModal = function () {
+      withdrawModal.classList.remove("hidden");
+  };
+
+  const closeTopUpModal = function () {
+      topUpModal.classList.add("hidden");
+  };
+
+  const closeWithdrawModal = function () {
+      withdrawModal.classList.add("hidden");
   };
 
   const sendPaymentToBackend = async function (referenceNumber, amount) {
-      console.log("It's getting here all right");
       const data =  {
 	  Amount: amount,
 	  Account: 0,
 	  ReferenceNumber: referenceNumber,
-	  // sessionToken: "xxx",
       }
       const url = "/dashboard/savings/solo-saver"
       const response = await fetch(url, {
@@ -114,28 +150,34 @@
 	  headers: {
 	      "Content-Type": "application/json",
 	      "X-CSRF-Token": csrfToken,
+	      "X-Authorization": `Bearer ${sessionToken}`,
 	  },
 	  body: JSON.stringify(data),
       })
-      return response.json();
+      
+      // TODO: Show the pending savings message
+      // we are relaading to show the pending savings message
+      // However, this is an inefficient method.
+      // The better solution is to send a HTMx response from the sendPaymentToBackend route and move that into the template
+      
+      window.location.reload();
+      // return response.json();
   }
 
   const openPaystackModal = function (e) {
       e.preventDefault();
       let handler = PaystackPop.setup({
-	  key: 'pk_test_8a697e5a45403dae81cc0acc7e1df00784effa74',
-	  // Replace with your public key
+	  key: "{{.PublicKey}}",
 	  email: "{{.Information.EmailAddress}}",
-	  amount: amount_in_k.value * 100,
+	  amount: amount.value * 100,
 	  // amount is multiplied by 100 so that it can be represented as kobos
-	  ref: ''+Math.floor((Math.random() * 1000000000) + 1),
-	  // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
+	  ref: referenceNumber,
 	  // label: "Optional string that replaces customer email"
 
 	  onClose: function () {
 	      // reset the form and close the modal.
 	      savingsForm.reset();
-	      closeModal();
+	      closeTopUpModal();
 	  },
 
 	  callback: function(response){
@@ -145,26 +187,24 @@
 	      // prevent XSS, and the user's session token to be sure
 	      // that it's this user that sent the request.
 
-	      sendPaymentToBackend(response.reference, amount_in_k.value * 100);
+	      sendPaymentToBackend(referenceNumber, amount.value * 100);
 
 	      savingsForm.reset();
-	      closeModal();
+	      closeTopUpModal();
 
-	      // make sure that the request retries on failure
-
-	      // TODO: Show the pending savings message
-	      // we are relaading to show the pending savings message
-	      // However, this is an inefficient method.
-	      // The better solution is to send a HTMx response from the sendPaymentToBackend route and move that into the template
-	      
-	      // window.location.reload();
+	      // TODO: make sure that the request retries on failure
 	  } 
       });
       handler.openIframe();
   };
 
-  overlay.addEventListener("click", closeModal);
-  topUpButton.addEventListener("click", openModal);
+  for (let i = 0; i < allOverlays.length; i++) {
+      const overlay = allOverlays[i];
+      overlay.addEventListener("click", () => {closeTopUpModal(); closeWithdrawModal();});
+  }
+
+  topUpButton.addEventListener("click", openTopUpModal);
+  withdrawButton.addEventListener("click", openWithdrawModal);
   processPaymentButton.addEventListener("click", openPaystackModal);
 </script>
 

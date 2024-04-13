@@ -5,20 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	// TODO: move this to an env file
-	host     = "localhost"
-	port     = "5432"
-	user     = "toby"
-	password = "Afternoonglory1"
-	dbname   = "pazsimple"
 )
 
 type DB struct {
@@ -30,22 +23,35 @@ var (
 	ErrAccountAlreadyExists = errors.New("account already exists")
 	ErrUserNotVerified = errors.New("user's email is not yet verified")
 	ErrPasswordIncorrect = errors.New("password incorrect")
+	ErrReferenceNumberDoesNotExist = errors.New("this transaction's reference number does not exist in our records")
 )
 
-func HashPassword(password string) (string, error){
-	// the second argument is the cost,
-	// which I suppose is how many times the hash is rehashed
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 16)
-
-	if err != nil {
-		return "", err
+func (d *DB) Connect() {
+	// host, status := os.LookupEnv("PAZ_WEB_DB_HOST")
+	// if status == true {
+	// 	log.Fatal("failed while trying to load db host from env")
+	// }
+	
+	// At some point, I must have thought that I needed the host
+	// env variable, but it seems like I might not
+	user, status := os.LookupEnv("PAZ_WEB_DB_USER")
+	if status != true {
+		log.Fatal("failed while trying to load db user from env")
+	}
+	port, status := os.LookupEnv("PAZ_WEB_DB_PORT")
+	if status != true {
+		log.Fatal("failed while trying to load db port from env")
+	}
+	dbName, status := os.LookupEnv("PAZ_WEB_DB_NAME")
+	if status != true {
+		log.Fatal("failed while trying to load db name from env")
+	}
+	password, status := os.LookupEnv("PAZ_WEB_DB_PASSWORD")
+	if status != true {
+		log.Fatal("failed while trying to load db password from env")
 	}
 	
-	return string(hash), nil
-}
-
-func (d *DB) Connect() {
-	connectionStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", user, password, dbname, port)
+	connectionStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", user, password, dbName, port)
 
 	db, err := sql.Open("postgres", connectionStr)
 
@@ -81,7 +87,8 @@ func (d *DB) GetHomeScreenInformation(userID uint) (HomeScreenInformation, error
 
 	information.FirstName = firstName.String
 	information.LastName = lastName.String
-	information.SavingsBalance = savingsBalance.Int64
+	information.SavingsBalance = int64(convertToNaira(savingsBalance.Int64))
+	// converted back into naira
 
 	return information, nil
 }
@@ -164,6 +171,8 @@ func (d *DB) GetProfileScreenInformation(userID uint) (ProfileScreenInformation,
 	information.NextOfKin.EmailAddress = nextOfKinEmail.String
 	information.NextOfKin.PhoneNumber = nextOfKinPhoneNumber.String
 	information.NextOfKin.Relationship = relationship.String
+
+	fmt.Println("Information from profile DB statement", information)
 
 	return information, nil
 }
@@ -268,13 +277,15 @@ func (d *DB) GetSoloSaverScreenInformation(userID uint) (SoloSaverScreenInformat
 	if err := d.Conn.QueryRow(GetSoloSaverScreenInformationStatement, userID).Scan(
 		&balance,
 		&email,
+		&information.HasPendingPayment,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return information, fmt.Errorf("error %s returned from query", err.Error())
 		}
 	}
 
-	information.Balance = uint64(balance.Int64)
+	information.Balance = uint64(balance.Int64) / 100
+	// the balance is converted back to normal naira
 	information.EmailAddress = email.String
 	return information, nil
 }
@@ -334,18 +345,6 @@ func (d *DB) GetThriftScreenInformation(userID uint) (ThriftScreenInformation, e
 	return ThriftScreenInformation{}, nil
 }
 
-func (d *DB) CreateSoloSavingsPendingTransaction(userID uint, amount int64, refNo string) (TransactionInformation, error) {
-	var information TransactionInformation
-	_, err := d.Conn.Exec(CreateSoloSavingsPendingTransactionStatement, userID, amount, refNo)
-
-	if err != nil {
-		return information, fmt.Errorf("Error while executing statement: %s", err)
-	}
-
-	// Get the new album's generated ID for the client.
-	return information, nil	
-}
-
 func (d *DB) RegisterUser(firstName, lastName, email, password string) (RegisterPostInformation, error) {
 
 	var information RegisterPostInformation
@@ -360,14 +359,13 @@ func (d *DB) RegisterUser(firstName, lastName, email, password string) (Register
 	// then after verification has been implemented, we will use
 	// the better flow
 
-	// TODO: test that this works properly, i.e it doesn't scramble the @ sign or possible full stops
 	email = strings.ToLower(email)
 
 	passwordHash, err := HashPassword(password)
 	isVerified := true
 
 	if err != nil {
-		return RegisterPostInformation{}, err
+		return information, err
 	}
 
 	_, err = d.Conn.Exec(RegisterUserStatement, firstName, lastName, email, isVerified, passwordHash)
@@ -376,10 +374,10 @@ func (d *DB) RegisterUser(firstName, lastName, email, password string) (Register
 		return information, err
 	}
 	
-	return RegisterPostInformation{}, nil
+	return information, nil
 }
 
-func (d *DB) CreateLoanApplication(userID uint, amount, termDuration uint64) (LoanApplicationInformation, error) {
+func (d *DB) CreateLoanApplication(userID uint, amount, termDuration uint64, bvn uint64) (LoanApplicationInformation, error) {
 	var information LoanApplicationInformation
 	amount_in_k := amount * 100
 	_, err := d.Conn.Exec(CreateLoanApplicationStatement, userID, amount_in_k, termDuration)
@@ -395,7 +393,13 @@ func (d *DB) GetLoanScreenInformation(userID uint) (GetLoanScreenInformation, er
 	// TODO: the name of this function is too alike to another. The other function breaks the convention of this entire interface. FIX IT.
 
 	var information GetLoanScreenInformation
-	_, err := d.Conn.Exec(GetLoanScreenInformationStatement, userID)
+	statement, err := d.Conn.Prepare(GetLoanScreenInformationStatement)
+
+	if err != nil {
+		return information, err
+	}
+	
+	err = statement.QueryRow(userID).Scan(&information.HasValidBVN)
 	
 	// TODO: after BVN validation step, this should change
 
@@ -409,4 +413,105 @@ func (d *DB) GetLoanScreenInformation(userID uint) (GetLoanScreenInformation, er
 
 	information.HasValidBVN = true
 	return information, nil
+}
+
+func (d *DB) GetPaystackVerificationInformation(referenceNumber string) (PaystackTransactionInformation, error) {
+	var information PaystackTransactionInformation
+
+	err := d.Conn.QueryRow(GetPaystackVerificationInformation, referenceNumber).Scan(&information.CustomerID, &information.PlanID, &information.PaymentOriginator)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return information, ErrReferenceNumberDoesNotExist
+		}
+		return information, err
+	}
+
+	return information, nil
+}
+
+func (d *DB) UpdateSoloSaverPaymentFailure(referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error) {
+	var information SoloSaverPaymentInformation
+	if _, err := d.Conn.Exec(UpdateSoloSaverPaymentFailureStatement, referenceNumber); err != nil {
+		return information, err
+	}
+	return information, nil
+}
+
+// For solo savers payments, planID doesn't matter, but you'll still need to provide something, by convention, we can make that 99909990
+func (d *DB) CreatePayment(userID, planID uint, referenceNumber uuid.UUID, paymentOriginator string, amountInK int64) (PaymentInformation, error) {
+	var information PaymentInformation
+
+	_, err := d.Conn.Exec(CreatePaymentProcessorPendingTransaction, userID, planID, referenceNumber, paymentOriginator, amountInK)
+
+	if err != nil {
+		log.Printf("An error occured while trying to create a pending payment %s", err)
+		return information, nil
+	}
+	
+	return information, nil
+}
+
+// Takes a paystack payment, saves the paystack information then also for this function at least, it updates the user's solo saver account
+func (d *DB) UpdateSoloSaverPaymentInformation(amountInK uint64, customerID uint, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error) {
+	var information SoloSaverPaymentInformation
+
+	if _, err := d.Conn.Exec(UpdateSoloSaverPaymentInformationStatement, amountInK, customerID, referenceNumber); err != nil {
+		return information, nil
+	}
+	
+	return information, nil
+}
+
+func (d *DB) CreateNewFamilyVault(userID uint, familyName, familyMemberEmail string, amount float64, frequency string, duration int64) (FamilyVaultInformation, error) {
+	var information FamilyVaultInformation
+	description := ""
+	balance_in_k := 0
+	amount_in_k := amount * 100
+
+	var planID uint
+
+	transformedFrequency, err := convertFrequency(frequency)
+
+	if err != nil {
+		return information, err
+	}
+
+	statement, err := d.Conn.Prepare(CreateFamilyVaultStatement)
+	err = statement.QueryRow(userID, familyName, description, amount_in_k, balance_in_k, duration, transformedFrequency, familyMemberEmail).Scan(&planID)
+
+	if err != nil {
+		return information, err
+	}
+
+	information.PlanID = planID
+	return information, nil
+}
+
+func convertFrequency(frequency string) (string, error) {
+	if frequency == "Daily" {
+		return "D", nil
+	}
+	if frequency == "Weekly" {
+		return "W", nil
+	}
+	if frequency == "Montly" {
+		return "M", nil
+	}
+	if frequency == "Yearly" {
+		return "Y", nil
+	}
+	return "", errors.New(fmt.Sprintf("Unknown frequency specified %s", frequency))
+}
+
+func HashPassword(password string) (string, error){
+	// the second argument is the cost,
+	// which I suppose is how many times the hash is rehashed
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 16)
+
+	if err != nil {
+		return "", err
+	}
+	
+	return string(hash), nil
 }

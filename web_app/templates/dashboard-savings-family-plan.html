@@ -39,7 +39,155 @@
   </div>
 </main>
 
+<div class="modal-flex-container hidden" role="document">
+  <div id="modal-container">
+    <article class="modal">
+      <div class="modal-heading-container">
+        <h2 id="top-up-heading">Top-up your savings</h2>
+        <p>Save up the money that you'll regret spending</p>
+      </div>
+
+      <form id="savings-form" method="POST">
+        <div class="form-control">
+          <label for="top-up-amount">Top-up amount*</label>
+          <input
+            id="top-up-amount"
+            name="top-up-amount"
+            type="number"
+            min="1000"
+            required
+            placeholder="How much would you like to save?"
+          />
+          <div class="form-control-error-container"></div>
+          <!-- TODO: add regex validation -->
+        </div>
+
+        <!-- <div class="form-control"> -->
+        <!--   <label for="withdrawal-account" -->
+        <!--     >Select account to withdraw from*</label -->
+        <!--   > -->
+        <!--   <select -->
+        <!--     id="withdrawal-account" -->
+        <!--     name="withdrawal-account" -->
+        <!--     type="number" -->
+        <!--   > -->
+        <!--     <option value="">Select the account to withdraw from</option> -->
+        <!--     {{range .Information.Accounts}} -->
+        <!--     <option value="{{.ID}}">{{.Name}}</option> -->
+        <!--     {{end}} -->
+        <!--   </select> -->
+        <!--   <div class="form-control-error-container"></div> -->
+        <!--   <\!-- TODO: add regex validation -\-> -->
+        <!-- </div> -->
+
+        <button id="process-payment-button" type="submit" class="primary">
+          Save
+        </button>
+      </form>
+    </article>
+  </div>
+  <div class="modal-overlay"></div>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+</div>
+
 <script>
+  const modal = document.querySelector(".modal-flex-container");
+  const overlay = document.querySelector(".modal-overlay");
+  const topUpButton = document.getElementById("instant-top-up");
+  const processPaymentButton = document.getElementById("process-payment-button");
+  const savingsForm = document.getElementById("savings-form");
+  const amount = document.getElementById("top-up-amount");
+  const csrfToken = "{{.csrfToken}}"
+  const referenceNumber = {{.ReferenceNumber}}
+  const planID = "{{.PlanID}}"
+
+  const getCookie = function(cookieName) {
+      const name = cookieName + "=";
+      const cDecoded = decodeURIComponent(document.cookie);
+      //to be careful
+      const cArr = cDecoded.split('; ');
+      let res;
+      cArr.forEach(val => {
+	  if (val.indexOf(name) === 0) res = val.substring(name.length);
+      })
+      return res
+  }
+
+  const sessionToken = getCookie("session")
+
+  const openModal = function () {
+      modal.classList.remove("hidden");
+  };
+
+  const closeModal = function () {
+      modal.classList.add("hidden");
+  };
+
+  const sendPaymentToBackend = async function (referenceNumber, amount) {
+      const data =  {
+	  Amount: amount,
+	  Account: 0,
+	  ReferenceNumber: referenceNumber,
+      }
+      const url = `/dashboard/savings/family-vault/${planID}`
+      const response = await fetch(url, {
+	  method: "POST",
+	  mode: "same-origin",
+	  cache: "no-cache",
+	  headers: {
+	      "Content-Type": "application/json",
+	      "X-CSRF-Token": csrfToken,
+	      "X-Authorization": `Bearer ${sessionToken}`,
+	  },
+	  body: JSON.stringify(data),
+      })
+      
+      // TODO: Show the pending savings message
+      // we are relaading to show the pending savings message
+      // However, this is an inefficient method.
+      // The better solution is to send a HTMx response from the sendPaymentToBackend route and move that into the template
+      
+      window.location.reload();
+      return response.json();
+  }
+
+  const openPaystackModal = function (e) {
+      e.preventDefault();
+      let handler = PaystackPop.setup({
+	  key: "{{.PublicKey}}",
+	  email: "{{.Information.EmailAddress}}",
+	  amount: amount.value * 100,
+	  // amount is multiplied by 100 so that it can be represented as kobos
+	  ref: referenceNumber,
+	  // label: "Optional string that replaces customer email"
+
+	  onClose: function () {
+	      // reset the form and close the modal.
+	      savingsForm.reset();
+	      closeModal();
+	  },
+
+	  callback: function(response){
+
+	      // send a request to the backend containing the
+	      // reference and the amount along with a csrf token to
+	      // prevent XSS, and the user's session token to be sure
+	      // that it's this user that sent the request.
+
+	      sendPaymentToBackend(referenceNumber, amount.value * 100);
+
+	      savingsForm.reset();
+	      closeModal();
+
+	      // TODO: make sure that the request retries on failure
+	  } 
+      });
+      handler.openIframe();
+  };
+
+  overlay.addEventListener("click", closeModal);
+  topUpButton.addEventListener("click", openModal);
+  processPaymentButton.addEventListener("click", openPaystackModal);
 </script>
 {{end}}
 

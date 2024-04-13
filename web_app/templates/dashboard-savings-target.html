@@ -50,6 +50,7 @@
 	<p>Begin your journey to financial freedom</p>
       </div>
       <form action="/dashboard/savings/target-savings" method="POST">
+	{{.csrfField}}
       	<div class="form-control">
           <label for="savings-title">Savings Title*</label>
           <input id="savings-title" name="savings-title" type="text" placeholder="What are you saving towards" required/>
@@ -86,7 +87,7 @@
 
 	<div class="form-control">
           <label for="duration">Select a savings duration*</label>
-          <input id="duration" name="duration" type="number" placeholder="Enter a duration in months" min="1" required/>
+          <input id="duration" name="duration" type="number" placeholder="Enter a duration in days" min="30" required/>
 	  <div class="form-control-error-container"></div>
 	  <!-- TODO: add regex validation -->
 	</div>	

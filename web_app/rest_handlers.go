@@ -4,8 +4,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/json"
+	"log"
 	"net/http"
 )
+
 
 func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *http.Request) {
 	// This is a POST endpoint that we'll give to paystack as a
@@ -13,27 +15,67 @@ func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *h
 
 	// First, we verify that the request is coming from paystack,
 	// by checking the hash key sent in the request
-	
+
 	paystackSignature := r.Header.Get("x-paystack-signature")
 	var body string
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&body)
 	// TODO: a good solution is to store the secret key as its byte representation to avoid the constant transformation
-	isValidMac := validMAC([]byte(body), []byte(paystackSignature), []byte(h.paystackSecretKey))
+	isValidMac := validateMAC([]byte(body), []byte(paystackSignature), []byte("secret_key"))
 
 	if !isValidMac {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 
-	// Then we check that the type of transaction that the webhook
-	// is trying to represent, and pass it to the appropriate
-	// function.
+	// this is a finnicky solution, but I'm choosing it, in this moment, over the brittle one
+	var requestBody map[string]any
 
-	// we always have to acknowledge that we have received the ping
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+
+	if err != nil {
+		log.Printf("error marshalling paystack verification request body: %s \n", r.Body)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data := requestBody["data"].(map[string]any)
+	referenceNumber := data["offline_reference"].(string)
 	w.WriteHeader(http.StatusOK)
+	transactionInformation, err := h.store.GetPaystackVerificationInformation(referenceNumber)
+
+	if err == ErrReferenceNumberDoesNotExist {
+		// TODO: Perhaps, we should have a database table to handle suspect transactions. We can store this transaction there, for resolution purposes.
+
+		// and then we early return
+		return
+	}
+
+	// TODO: change this to a switch case
+	if requestBody["event"] == "paymentrequest.success" {
+		// We handle successes and failures, we can handle the rest as time goes on
+		amount := data["amount"].(uint64)
+		_, err = h.store.UpdateSoloSaverPaymentInformation(amount, transactionInformation.CustomerID, transactionInformation.ReferenceNumber)
+
+		if err != nil {
+			log.Printf("Couldn't update payment information with error %s", err)
+		}
+		return
+	}
+
+	if requestBody["event"] == "paymentrequest.failure" {
+		_, err = h.store.UpdateSoloSaverPaymentFailure(transactionInformation.ReferenceNumber)
+
+		if err != nil {
+			log.Printf("Couldn't update payment information with error %s", err)
+		}
+		return
+	}
+
+	return
 }
 
-func validMAC(message, messageMAC, signingKey []byte) bool {
+func validateMAC(message, messageMAC, signingKey []byte) bool {
 	// the signingKey is, in this case, the secret key from Paystack
 	mac := hmac.New(sha512.New, signingKey)
 	mac.Write(message)
@@ -41,6 +83,8 @@ func validMAC(message, messageMAC, signingKey []byte) bool {
 	return hmac.Equal(messageMAC, expectedMAC)
 }
 
+
 func handlePaymentTransaction() {
-	
+	// TODO: once we can verify that the webhooks work, then we
+	// should be able to implement this properly
 }

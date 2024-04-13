@@ -135,6 +135,12 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	routeMap[RouteURL("/dashboard/thrift/{thriftID}")] = []RouteTuple{
 		{"GET", handlerManager.thriftPlanGetHandler},
 	}
+	routeMap[RouteURL("/utility/paystack-verification-webhook")] = []RouteTuple{
+		{"POST", handlerManager.paystackVerificationWebhook},
+	}
+	routeMap[RouteURL("/dashboard/logout")] = []RouteTuple{
+		{"GET", handlerManager.logoutGetHandler},
+	}
 
 	handler, err := StartConfigurableWebAppServer(routeMap, secretKey)
 
