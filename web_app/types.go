@@ -28,6 +28,7 @@ type IStore interface {
 	UpdateSoloSaverPaymentInformation(amountInK uint64, customerID uint, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
 	UpdateSoloSaverPaymentFailure(referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
 	CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error)
+	GetInvestmentsScreenInformation(userID uint) (InvestmentsScreenInformation, error)
 }
 
 type User struct {
@@ -227,4 +228,8 @@ type PaymentInformation struct {
 
 type InvestmentApplicationInformation struct {
 	
+}
+
+type InvestmentsScreenInformation struct {
+	Balance uint64
 }

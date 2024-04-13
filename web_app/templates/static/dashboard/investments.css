@@ -13,6 +13,7 @@ h1 {
     border: 1px solid #ACB5BD;
     border-radius: 8px;
     width: 40%;
+    margin: 24px 0px;
 }
 
 .investments-info-card > h2 {

@@ -313,8 +313,8 @@ func (h *HandlerManager) dashboardHomeGetHandler(w http.ResponseWriter, r *http.
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		"FirstName":   homeScreenInformation.FirstName,
 		"Savings":     humanize.Comma(homeScreenInformation.SavingsBalance),
-		"Loans":       homeScreenInformation.LoansBalance,
-		"Investments": homeScreenInformation.InvestmentBalance,
+		"Loans":       humanize.Comma(homeScreenInformation.LoansBalance),
+		"Investments": humanize.Comma(homeScreenInformation.InvestmentBalance),
 		"Activities":  homeScreenInformation.Activities,
 		// "ShowModal":   homeScreenInformation.ShowModal,
 		"ShowModal": false,
@@ -546,7 +546,7 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 func (h *HandlerManager) investmentsGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: while we are still using the stop-gap implementation, we don't need the userSession. However, we still use it to log out the user
-	_ = h.getSessionOrLogout(w, r)
+	userSession := h.getSessionOrLogout(w, r)
 	w.Header().Add("Content-Type", "text/html")
 	templateFiles := []string{
 		"./web_app/templates/layouts/dashboard-base.html",
@@ -555,7 +555,11 @@ func (h *HandlerManager) investmentsGetHandler(w http.ResponseWriter, r *http.Re
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	err := tmpl.ExecuteTemplate(w, "base", nil)
+	information, err := h.store.GetInvestmentsScreenInformation(userSession.UserID)
+
+	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+		"Balance": information.Balance,
+	})
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -677,7 +681,7 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 
 		tmpl, err := template.ParseFiles(
 			"./web_app/templates/layouts/dashboard-base.html",
-			"./web_app/templates/dashboard-investments.html",
+			"./web_app/templates/dashboard-investments-form.html",
 		)
 
 		if err != nil {

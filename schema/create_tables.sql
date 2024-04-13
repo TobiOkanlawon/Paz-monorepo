@@ -96,13 +96,15 @@ CREATE TABLE IF NOT EXISTS investment_application (
        date_of_employment			  date				 NOT NULL,
        employer_name				  varchar(128)			 NOT NULL,
        tenure					  integer			 NOT NULL,
+       -- this tracks whether the admin has accepted the investment request or not
+       status					  status_type			 NOT NULL DEFAULT 'PENDING',
        -- tax identification number
        tin    integer NOT NULL,
        bank_account_name  varchar(64)	NOT NULL,
        bank_account_number		integer	NOT NULL,
-       CONSTRAINT investment_account_pk PRIMARY KEY(investment_account_id),
+       CONSTRAINT investment_application_pk PRIMARY KEY(investment_account_id),
        CONSTRAINT investment_account_fk	FOREIGN KEY (investment_account_id) REFERENCES investment_account (account_id)
-);
+);     
 
 CREATE TABLE IF NOT EXISTS investment_account (
        customer_id 		integer	NOT NULL,

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
@@ -73,11 +74,15 @@ func (d *DB) GetHomeScreenInformation(userID uint) (HomeScreenInformation, error
 	var firstName sql.NullString
 	var lastName sql.NullString
 	var savingsBalance sql.NullInt64
+	var loansBalance int64
+	var investmentBalance int64
 
 	if err := d.Conn.QueryRow(GetHomeScreenInformationStatement, userID).Scan(
 		&firstName,
 		&lastName,
 		&savingsBalance,
+		&loansBalance,
+		&investmentBalance,
 	); err != nil {
 		log.Println(err);
 		if err == sql.ErrNoRows {
@@ -88,6 +93,8 @@ func (d *DB) GetHomeScreenInformation(userID uint) (HomeScreenInformation, error
 	information.FirstName = firstName.String
 	information.LastName = lastName.String
 	information.SavingsBalance = int64(convertToNaira(savingsBalance.Int64))
+	information.LoansBalance = int64(convertToNaira(loansBalance))
+	information.InvestmentBalance = int64(convertToNaira(investmentBalance))
 	// converted back into naira
 
 	return information, nil
@@ -486,6 +493,24 @@ func (d *DB) CreateNewFamilyVault(userID uint, familyName, familyMemberEmail str
 
 	information.PlanID = planID
 	return information, nil
+}
+
+func (d *DB) GetInvestmentsScreenInformation(userID uint) (InvestmentsScreenInformation, error) {
+	var information InvestmentsScreenInformation
+	var balance int64
+	err := d.Conn.QueryRow(GetInvestmentsScreenInformationStatement, userID).Scan(&balance)
+
+	if err != nil {
+		return information, err
+	}
+
+	information.Balance = convertToNaira(balance)
+
+	return information, nil
+}
+
+func (d *DB) CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error) {
+	return InvestmentApplicationInformation{}, nil
 }
 
 func convertFrequency(frequency string) (string, error) {

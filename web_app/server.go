@@ -108,6 +108,10 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	routeMap[RouteURL("/dashboard/investments")] = []RouteTuple{
 		{"GET", handlerManager.investmentsGetHandler},
 	}
+	routeMap[RouteURL("/dashboard/investments/form")] = []RouteTuple{
+		{"GET", handlerManager.investmentsFormGetHandler},
+		{"POST", handlerManager.investmentsFormPostHandler},
+	}
 	routeMap[RouteURL("/dashboard/fragments/bvn")] = []RouteTuple{
 		{"GET", handlerManager.bvnModalGetHandler},
 		{"POST", handlerManager.addBVNPostHandler},

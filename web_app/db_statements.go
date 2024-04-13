@@ -1,6 +1,6 @@
 ﻿package web_app
 
-const GetHomeScreenInformationStatement = `SELECT customer.first_name, customer.last_name, solo_savings_account.balance_in_k AS "Savings Balance" FROM customer, solo_savings_account WHERE customer.customer_id = $1;
+const GetHomeScreenInformationStatement = `SELECT customer.first_name, customer.last_name, solo_savings_account.balance_in_k, loans_account.amount_owed_in_k, investment_account.balance_in_k FROM customer, solo_savings_account, loans_account, investment_account WHERE customer.customer_id = $1;
 `
 const GetProfileScreenInformationStatement = `SELECT customer.first_name, customer.last_name, customer.postal_address, customer.email, customer.phone_number, customer.sex, customer.date_of_birth, next_of_kin.first_name, next_of_kin.last_name, next_of_kin.email, next_of_kin.phone_number, next_of_kin.kin_relationship FROM customer JOIN next_of_kin ON customer.customer_id = next_of_kin.customer_id WHERE customer.customer_id = $1;`
 
@@ -104,4 +104,6 @@ FROM transaction_update WHERE solo_savings_account.customer_id = transaction_upd
 `
 const UpdateSoloSaverPaymentFailureStatement = `
 UPDATE 
-`;
+`
+
+const GetInvestmentsScreenInformationStatement = `SELECT balance_in_k FROM investment_account WHERE customer_id = $1;`
