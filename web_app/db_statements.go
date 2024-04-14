@@ -34,7 +34,7 @@ const CreatePaymentProcessorPendingTransaction = `INSERT INTO payment_processor_
 
 const GetPaystackVerificationInformation = `SELECT customer_id, plan_id, payment_originator FROM payment_processor_transaction WHERE reference_number = $1`
 
-const AuthenticateUserStatement = `SELECT customer.customer_id, customer.email, CAST((admin_user.admin_id = customer.customer_id) AS BOOLEAN), customer.email_is_verified, password_hash.hash FROM customer, admin_user, password_hash WHERE customer.email = $1 AND customer.customer_id = password_hash.customer_id;`
+const AuthenticateUserStatement = `SELECT customer.customer_id, customer.email, CAST((admin_user.admin_user_id = customer.customer_id) AS BOOLEAN), customer.email_is_verified, password_hash.hash FROM customer, admin_user, password_hash WHERE customer.email = $1 AND customer.customer_id = password_hash.customer_id;`
 
 const RegisterUserStatement = `WITH new_customer AS (
     INSERT INTO customer (first_name, last_name, email, email_is_verified)
