@@ -32,9 +32,17 @@ const GetLoansScreenInformationStatement = `SELECT amount_owed_in_k FROM loans_a
 
 const CreatePaymentProcessorPendingTransaction = `INSERT INTO payment_processor_transaction (customer_id, plan_id, reference_number, payment_originator, payment_amount_in_k) VALUES ($1, $2, $3, $4, $5);`
 
-const GetPaystackVerificationInformation = `SELECT customer_id, plan_id, payment_originator FROM payment_processor_transaction WHERE reference_number = $1`
+const GetPaystackVerificationInformation = `SELECT customer_id, plan_id, payment_originator FROM payment_processor_transaction WHERE reference_number = $1;`
 
-const AuthenticateUserStatement = `SELECT customer.customer_id, customer.email, CAST((admin_user.admin_user_id = customer.customer_id) AS BOOLEAN), customer.email_is_verified, password_hash.hash FROM customer, admin_user, password_hash WHERE customer.email = $1 AND customer.customer_id = password_hash.customer_id;`
+const AuthenticateUserStatement = `SELECT c.customer_id,
+       c.email,
+       CASE WHEN a.customer_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_admin,
+       c.email_is_verified,
+       ph.hash
+FROM customer c
+JOIN password_hash ph ON c.customer_id = ph.customer_id
+LEFT JOIN admin_user a ON c.customer_id = a.customer_id
+WHERE c.email = $1;`
 
 const RegisterUserStatement = `WITH new_customer AS (
     INSERT INTO customer (first_name, last_name, email, email_is_verified)
@@ -103,7 +111,7 @@ SET balance_in_k = balance_in_k + transaction_update.payment_amount_in_k
 FROM transaction_update WHERE solo_savings_account.customer_id = transaction_update.customer_id;
 `
 const UpdateSoloSaverPaymentFailureStatement = `
-UPDATE 
+-- UPDATE 
 `
 
 const GetInvestmentsScreenInformationStatement = `SELECT balance_in_k FROM investment_account WHERE customer_id = $1;`

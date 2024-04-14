@@ -66,6 +66,7 @@ func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		var errorsMap = make(map[string]string)
+		log.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 
 		// this is the default message
