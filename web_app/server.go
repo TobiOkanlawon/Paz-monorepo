@@ -22,8 +22,6 @@ type RouteTuple struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-var logger log.Logger
-
 type RouteMap map[RouteURL][]RouteTuple
 
 func NewRouter(routes RouteMap) *chi.Mux {
@@ -44,15 +42,16 @@ func NewRouter(routes RouteMap) *chi.Mux {
 }
 
 func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (handler http.Handler, cleanup func()error, err error) {
-	// TODO: do the logging better too
 
-	f, err := os.OpenFile("log.txt", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening log file: %v", err)
-	}
+	// Removed file logging because it wasn't working properly on the server and the journalctl logging seemed to be doing much better
 
-	log.SetOutput(f)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags)
+	// f, err := os.OpenFile("log.txt", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	// if err != nil {
+	// 	log.Fatalf("error opening log file: %v", err)
+	// }
+
+	// log.SetOutput(f)
+	// log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags)
 	
 	if len(routes) == 0 {
 		return nil, f.Close, ErrorEmptyRouteMap
