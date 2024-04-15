@@ -58,8 +58,8 @@ func (h *HandlerManager) loginGetHandler(w http.ResponseWriter, r *http.Request)
 func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
 	r.ParseForm()
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	email := r.PostFormValue("email")
+	password := r.PostFormValue("password")
 	loginInformation, err := h.store.AuthenticateUser(email, password)
 
 	// TODO: handle validation and CSRF
@@ -167,10 +167,9 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 		// TODO: implement the validation as HTMX fragment responses to cut on work
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		tmpl, err := template.ParseFiles("./web_app/templates/register.html", "./web_app/templates/layouts/pre_auth-base.html")
-
 		
-		log.Println(err)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		}
 
