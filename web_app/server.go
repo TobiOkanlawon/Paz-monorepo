@@ -3,7 +3,6 @@ package web_app
 import (
 	"encoding/gob"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 
@@ -41,7 +40,7 @@ func NewRouter(routes RouteMap) *chi.Mux {
 	return r
 }
 
-func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (handler http.Handler, cleanup func()error, err error) {
+func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (handler http.Handler, cleanup func() error, err error) {
 
 	// Removed file logging because it wasn't working properly on the server and the journalctl logging seemed to be doing much better
 
@@ -52,9 +51,9 @@ func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (handler h
 
 	// log.SetOutput(f)
 	// log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags)
-	
+
 	if len(routes) == 0 {
-		return nil, f.Close, ErrorEmptyRouteMap
+		return nil, func() error { return nil }, ErrorEmptyRouteMap
 	}
 
 	r := NewRouter(routes)
@@ -65,11 +64,11 @@ func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (handler h
 	// TODO: consider having all templates parsed before server initialization
 	// tpl = template.Must(template.ParseGlob("templates/*.gohtml"))
 
-	return r, f.Close, nil
+	return r, func() error { return nil }, nil
 }
 
 // TODO: write tests for the handlers getting passed in
-func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string) (handler http.Handler, cleanUp func()error, err error) {
+func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string) (handler http.Handler, cleanUp func() error, err error) {
 	partialsManager := GetPartialsManager(os.DirFS("./partials"))
 	db := DB{}
 	db.Connect()
@@ -161,10 +160,10 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	handler, cleanUp, err = StartConfigurableWebAppServer(routeMap, secretKey)
 
 	if err != nil {
-		return nil, func()(error){return nil}, err
+		return nil, func() error { return nil }, err
 	}
 
-	cleanUpFunction := func () error {
+	cleanUpFunction := func() error {
 		firstError := cleanUp()
 		secondError := db.Conn.Close()
 		if firstError != nil {
