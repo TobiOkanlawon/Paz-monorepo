@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 
@@ -54,7 +55,12 @@ func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *h
 	// TODO: change this to a switch case
 	if requestBody["event"] == "paymentrequest.success" {
 		// We handle successes and failures, we can handle the rest as time goes on
-		amount := data["amount"].(uint64)
+		amount, err := strconv.ParseUint(data["amount"].(string), 10, 64)
+
+		if err != nil {
+			log.Printf("The conversion of the amount passed into the payment object from paystack has failed: %s", err)
+		}
+		
 		_, err = h.store.UpdateSoloSaverPaymentInformation(amount, transactionInformation.CustomerID, transactionInformation.ReferenceNumber)
 
 		if err != nil {
