@@ -88,9 +88,3 @@ func validateMAC(message, messageMAC, signingKey []byte) bool {
 	expectedMAC := mac.Sum(nil)
 	return hmac.Equal(messageMAC, expectedMAC)
 }
-
-
-func handlePaymentTransaction() {
-	// TODO: once we can verify that the webhooks work, then we
-	// should be able to implement this properly
-}
