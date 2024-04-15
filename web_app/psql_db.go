@@ -513,6 +513,20 @@ func (d *DB) CreateInvestmentApplication(userID uint, employmentInformation stri
 	return InvestmentApplicationInformation{}, nil
 }
 
+func (d *DB) GetAdminHomeScreenInformation(userID uint) (AdminHomeScreenInformation, error) {
+	// TODO: Limit this to only admins
+	// that's what the userID is for
+	var information AdminHomeScreenInformation
+
+	err := d.Conn.QueryRow(GetAdminHomeScreenInformationStatement).Scan(&information.LoanRequests, &information.InvestmentsRequests, &information.WithdrawalRequests)
+
+	if err != nil {
+		return information, err
+	}
+
+	return information, nil
+}
+
 func convertFrequency(frequency string) (string, error) {
 	if frequency == "Daily" {
 		return "D", nil

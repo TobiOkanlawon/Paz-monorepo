@@ -1,1 +1,11 @@
-header
+section {
+    padding: 36px;
+}
+
+section h1 {
+    margin-bottom: 12px;
+}
+
+section p {
+    margin-bottom: 6px;
+}

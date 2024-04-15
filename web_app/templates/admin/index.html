@@ -4,53 +4,49 @@
 {{end}}
 {{define "main"}}
 <!-- TODO: don't use CDN in production: https://htmx.org/docs/#via-a-cdn-e-g-unpkg-com -->
-<header>
-  <nav>
-    <ul>
-      <li>Loans</li>
-      <li>Investments</li>
-      <li>Savings</li>
-    </ul>
-  </nav>
-</header>
 <main id="content-container">
   <section>
     <h1>Loan requests</h1>
-    {{if .Loans}}
-    <ul>
-      {{range .Loans}}
-      <li data-loan-id="{{.ID}}">{{.FirstName}} {{.LastName}} -- {{.Amount}}
-	<button></button>
-      </li>
-      {{end}}
-    </ul>
-    {{end}}
+    <p>
+      There are {{.LoanRequests}} pending loan requests
+    </p>
+    <button id="loan-button" class="primary">View all loan requests</button>
   </section>
+  <hr/>
 
   <section>
     <h1>Investment requests</h1>
-    {{if .Investments}}
-    <ul>
-      {{range .Investments}}
-      <li data-investments-id="{{.ID}}">{{.FirstName}} {{.LastName}} -- {{.Amount}}
-	<button></button>
-      </li>
-      {{end}}
-    </ul>
-    {{end}}
+    <p>
+      There are {{.InvestmentsRequests}} pending investments requests
+    </p>
+    <button id="investment-button" class="primary">View all investments requests</button>
   </section>
+  <hr/>
 
   <section>
     <h1>Saving withdrawal requests</h1>
-    {{if .Savings}}
-    <ul>
-      {{range .Savings}}
-      <li data-savings-id="{{.ID}}">{{.FirstName}} {{.LastName}} -- {{.Amount}}
-	<button></button>
-      </li>
-      {{end}}
-    </ul>
-    {{end}}
+    <p>
+      There are {{.WithdrawalRequests}} pending withdrawal requests
+    </p>
+    <button id="withdrawal-button" class="primary">View all withdrawal requests</button>
   </section>
+  <hr/>
 </main>
+<script>
+  const loanButton = document.getElementById("loan-button");
+  const investmentButton = document.getElementById("investment-button");
+  const withdrawalButton = document.getElementById("withdrawal-button");
+
+  loanButton.addEventListener("click", () => {
+      window.location.assign("/admin/loans");
+  })
+
+  investmentButton.addEventListener("click", () => {
+      window.location.assign("/admin/investments");
+  })
+
+  withdrawalButton.addEventListener("click", () => {
+      window.location.assign("/admin/withdrawals");
+  })
+</script>
 {{end}}

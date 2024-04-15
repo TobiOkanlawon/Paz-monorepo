@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS password_hash (
 CREATE TABLE IF NOT EXISTS solo_savings_account (
        account_id	   serial	NOT NULL,
        customer_id	   integer	NOT NULL UNIQUE,
-       balance_in_k	   integer	NOT NULL,
        balance_in_k	   integer	NOT NULL CHECK(balance_in_k > 0),
        -- the balance is stored in kobos
        CONSTRAINT solo_savings_account_pk PRIMARY KEY(account_id)
@@ -50,7 +49,6 @@ CREATE TABLE IF NOT EXISTS family_vault_plan (
        contribution_amount_in_k		    integer NOT NULL,
        savings_duration_in_d		    integer NOT NULL,
        savings_frequency		    frequency_type	NOT NULL,
-       balance_in_k	       integer	NOT NULL,
        balance_in_k	       integer	NOT NULL CHECK(balance_in_k > 0),
        is_active	       boolean	DEFAULT true,
        creator_id	       integer	NOT NULL,
@@ -67,15 +65,23 @@ CREATE TABLE IF NOT EXISTS family_vault_plan_member (
 -- TODO: I have removed it because, for some reason, it has refused to work and I cannot spend too much time here
 );
 
+CREATE TABLE withdrawal_application (       
+       customer_id		    integer	NOT NULL,
        amount_in_k		    integer	NOT NULL CHECK(amount_in_k > 0),
+       status			    status_type	NOT NULL DEFAULT 'PENDING',
+       failure_reason		    text,
+       date_created		    timestamp	DEFAULT CURRENT_TIMESTAMP,
+       CONSTRAINT		    withdrawal_application_customer_fk FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+);
+
 CREATE TABLE IF NOT EXISTS target_savings_plan (
        target_savings_plan_id	 serial NOT NULL,
        customer_id		 integer    NOT NULL,
        name		       varchar(32) NOT NULL,
        description	       varchar(128) ,
-       balance_in_k	       integer	NOT NULL,
-       goal_in_k	       integer	NOT NULL
        balance_in_k	       integer	NOT NULL CHECK(balance_in_k > 0),
+       goal_in_k	       integer	NOT NULL,
+       CONSTRAINT	       target_savings_plan_pk PRIMARY KEY (target_savings_plan)
 );
 
 CREATE TABLE IF NOT EXISTS loans_account (
@@ -113,7 +119,6 @@ CREATE TABLE IF NOT EXISTS investment_application (
 CREATE TABLE IF NOT EXISTS investment_account (
        customer_id 		integer	NOT NULL,
        account_id		serial 	NOT NULL,
-       balance_in_k		integer NOT NULL,
        balance_in_k		integer NOT NULL CHECK(balance_in_k > 0),
        CONSTRAINT investment_account_pk PRIMARY KEY(account_id)
 );

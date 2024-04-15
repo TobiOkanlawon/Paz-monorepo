@@ -29,6 +29,7 @@ type IStore interface {
 	UpdateSoloSaverPaymentFailure(referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
 	CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error)
 	GetInvestmentsScreenInformation(userID uint) (InvestmentsScreenInformation, error)
+	GetAdminHomeScreenInformation(userID uint) (AdminHomeScreenInformation, error)
 }
 
 type User struct {
@@ -232,4 +233,10 @@ type InvestmentApplicationInformation struct {
 
 type InvestmentsScreenInformation struct {
 	Balance uint64
+}
+
+type AdminHomeScreenInformation struct {
+	LoanRequests int
+	InvestmentsRequests int
+	WithdrawalRequests int
 }

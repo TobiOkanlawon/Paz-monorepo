@@ -156,6 +156,9 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	routeMap[RouteURL("/dashboard/logout")] = []RouteTuple{
 		{"GET", handlerManager.logoutGetHandler},
 	}
+	routeMap[RouteURL("/admin")] = []RouteTuple{
+		{"GET", handlerManager.adminHomeGetHandler},
+	}
 
 	handler, cleanUp, err = StartConfigurableWebAppServer(routeMap, secretKey)
 

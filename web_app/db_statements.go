@@ -66,8 +66,7 @@ SELECT customer_id, $5
 FROM new_customer;
 `
 
-const CreateLoanApplicationStatement = `
-INSERT INTO loan_application (loans_account_id, amount_requested_in_k, duration_requested_in_days) (SELECT account_id, $2, $3 FROM loans_account WHERE customer_id = $1);
+const CreateLoanApplicationStatement = `INSERT INTO loan_application (loans_account_id, amount_requested_in_k, duration_requested_in_days) (SELECT account_id, $2, $3 FROM loans_account WHERE customer_id = $1);
 `
 
 // do the one for the loans and investments accounts too
@@ -92,8 +91,7 @@ FROM new_family_vault nfv
 JOIN customer c ON c.email = $8
 RETURNING nfv.family_vault_plan_id;`
 
-const UpdateSoloSaverPaymentInformationStatement = `
-WITH transaction_update AS (
+const UpdateSoloSaverPaymentInformationStatement = `WITH transaction_update AS (
   UPDATE payment_processor_transaction
   SET verification_status = 'SUCCESSFUL',
   fulfillment_status = 'SUCCESSFUL',
@@ -110,8 +108,10 @@ UPDATE solo_savings_account
 SET balance_in_k = balance_in_k + transaction_update.payment_amount_in_k
 FROM transaction_update WHERE solo_savings_account.customer_id = transaction_update.customer_id;
 `
-const UpdateSoloSaverPaymentFailureStatement = `
--- UPDATE 
+const UpdateSoloSaverPaymentFailureStatement = `--UPDATE 
 `
 
 const GetInvestmentsScreenInformationStatement = `SELECT balance_in_k FROM investment_account WHERE customer_id = $1;`
+
+const GetAdminHomeScreenInformationStatement = `SELECT count(loan_application.status = 'PENDING') AS ls, count(investment_application.status = 'PENDING') AS inv, count(withdrawal_application.status = 'PENDING') AS wa FROM loan_application, investment_application, withdrawal_application;
+`;

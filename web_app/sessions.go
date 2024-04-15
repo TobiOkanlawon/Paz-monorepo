@@ -31,6 +31,8 @@ type UserSession struct {
 	AuthenticationStatus bool
 }
 
+var ErrNotAdmin = errors.New("user is not an admin user")
+
 // Role is Admin, or Basic. This is used to restrict access to the admin routes
 
 var sessionStore = make(map[uuid.UUID]UserSession)

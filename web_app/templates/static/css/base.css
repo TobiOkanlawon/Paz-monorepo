@@ -171,3 +171,15 @@ a.button {
     margin-top: 4px;
     color: red;
 }
+
+/* Admin base */
+
+#admin-nav-bar nav ul {
+    display: flex;
+    width: 100%;
+    border-bottom: 4px solid var(--primary-blue-2);
+    justify-content: space-evenly;
+    padding: 24px 12px;
+    margin-bottom: 12px;
+}
+

@@ -301,7 +301,8 @@ func (h *HandlerManager) dashboardHomeGetHandler(w http.ResponseWriter, r *http.
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
+	
 	homeScreenInformation, err := h.store.GetHomeScreenInformation(userSession.UserID)
 
 	if err == sql.ErrNoRows {
@@ -339,7 +340,7 @@ func (h *HandlerManager) profileGetHandler(w http.ResponseWriter, r *http.Reques
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 	profileInformation, err := h.store.GetProfileScreenInformation(userSession.UserID)
 
 	if err != nil {
@@ -371,7 +372,7 @@ func (h *HandlerManager) savingsGetHandler(w http.ResponseWriter, r *http.Reques
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	savingsInformation, err := h.store.GetSavingsScreenInformation(userSession.UserID)
 
@@ -399,7 +400,7 @@ func (h *HandlerManager) loansGetHandler(w http.ResponseWriter, r *http.Request)
 		"./web_app/templates/dashboard-loans.html",
 	}
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	loansScreenInformation, err := h.store.GetLoansScreenInformation(userSession.UserID)
 
@@ -425,22 +426,7 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 		"./web_app/templates/dashboard-get-loans.html",
 	}
 
-	session, _ := h.cookieStore.Get(r, "session")
-	cookie, err := getSessionCookie(session)
-
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-		log.Printf("failed to get user cookie")
-		return
-	}
-
-	userSession, err := GetSession(cookie.SessionID)
-
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-		log.Printf("some session problem: %s", err)
-		return
-	}
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	information, err := h.store.GetLoanScreenInformation(userSession.UserID)
 
@@ -468,7 +454,7 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 
 func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Request) {
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 	
 	w.Header().Add("Content-Type", "text/html")
 	r.ParseForm()
@@ -484,6 +470,8 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 	}
+
+	// TODO: Add bank statement upload to the loans application page
 
 	bvn := r.PostFormValue("bvn")
 	var transformedBvn uint64
@@ -546,7 +534,7 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 func (h *HandlerManager) investmentsGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: while we are still using the stop-gap implementation, we don't need the userSession. However, we still use it to log out the user
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 	w.Header().Add("Content-Type", "text/html")
 	templateFiles := []string{
 		"./web_app/templates/layouts/dashboard-base.html",
@@ -571,7 +559,7 @@ func (h *HandlerManager) investmentsGetHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (h *HandlerManager) investmentsFormGetHandler(w http.ResponseWriter, r *http.Request) {
-	_ = h.getSessionOrLogout(w, r)
+	h.getSessionOrLogout(w, r)
 	w.Header().Add("Content-Type", "text/html")
 	templateFiles := []string{
 		"./web_app/templates/layouts/dashboard-base.html",
@@ -594,7 +582,7 @@ func (h *HandlerManager) investmentsFormGetHandler(w http.ResponseWriter, r *htt
 func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 	r.ParseForm()
 	var errorsMap = make(map[string]string)
 	
@@ -755,27 +743,7 @@ func (h *HandlerManager) familyVaultGetHandler(w http.ResponseWriter, r *http.Re
 		"./web_app/templates/dashboard-savings-family.html",
 	}
 
-	
-	session, err := h.cookieStore.Get(r, "session")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sessionCookie, err := getSessionCookie(session)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	userSession, err := GetSession(sessionCookie.SessionID)
-
-	if err != nil {
-		// if the session is invalid, delete the cookie and redirect to the login page
-		session.Options.MaxAge = -1
-		session.Save(r, w)
-		http.Redirect(w, r, "/login", http.StatusUnauthorized)
-	}
+	userSession, _ := h.getSessionOrLogout(w, r)
 	
 	familyVaultInformation, err := h.store.GetFamilyVaultScreenInformation(userSession.UserID)
 
@@ -806,7 +774,7 @@ func (h *HandlerManager) familyVaultPostHandler(w http.ResponseWriter, r *http.R
 	w.Header().Add("Content-Type", "text/html")
 	// TODO: Should return a fragment for htmx requests
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	r.ParseForm()
 	familyName := r.PostFormValue("family-name")
@@ -841,7 +809,7 @@ func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *htt
 		"./web_app/templates/dashboard-savings-family-plan.html",
 	}
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	planID := chi.URLParam(r, "planID")
 	convertedPlanID, err := strconv.Atoi(planID)
@@ -884,7 +852,7 @@ func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *htt
 func (h *HandlerManager) soloSavingsAddFunds(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	decoder := json.NewDecoder(r.Body)
 	var data SoloSaverAddFundsRequestType
@@ -918,7 +886,7 @@ func (h *HandlerManager) soloSavingsAddFunds(w http.ResponseWriter, r *http.Requ
 func (h *HandlerManager) familySavingsAddFunds(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	decoder := json.NewDecoder(r.Body)
 	var data SoloSaverAddFundsRequestType
@@ -955,7 +923,7 @@ func (h *HandlerManager) familySavingsAddFunds(w http.ResponseWriter, r *http.Re
 func (h *HandlerManager) targetSavingsAddFunds(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 
 	decoder := json.NewDecoder(r.Body)
 	var data SoloSaverAddFundsRequestType
@@ -996,7 +964,7 @@ func (h *HandlerManager) soloSavingsGetHandler(w http.ResponseWriter, r *http.Re
 		"./web_app/templates/dashboard-savings-solo.html",
 	}
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 	savingsInformation, err := h.store.GetSoloSaverScreenInformation(userSession.UserID)
 
 	if err != nil {
@@ -1032,7 +1000,7 @@ func (h *HandlerManager) targetSavingsGetHandler(w http.ResponseWriter, r *http.
 		"./web_app/templates/dashboard-savings-target.html",
 	}
 
-	userSession := h.getSessionOrLogout(w, r)
+	userSession, _ := h.getSessionOrLogout(w, r)
 	targetSavingsInformation, err := h.store.GetTargetSavingsScreenInformation(userSession.UserID)
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
@@ -1181,6 +1149,45 @@ func (h *HandlerManager) thriftPlanGetHandler(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(200)
 }
 
+func (h *HandlerManager) adminHomeGetHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/html")
+
+	templateFiles := []string{
+		"./web_app/templates/admin/base.html",
+		"./web_app/templates/admin/index.html",
+	}
+
+	userSession, err := h.getAdminSessionOrLogout(w, r)
+
+	if err == ErrNotAdmin {
+		// This block is very important.
+		// Without this block, users will still be able to see the content of the page
+		return
+	}
+
+	information, err := h.store.GetAdminHomeScreenInformation(userSession.UserID)
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		log.Printf("error %q from url %q", err, r.URL.Path)
+		return 
+	}
+
+	// TODO: check that the user is an admin while getting their sessionCookie
+
+	tmpl := template.Must(template.ParseFiles(templateFiles...))
+
+	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+		"LoanRequests": information.LoanRequests,
+		"InvestmentsRequests": information.InvestmentsRequests,
+		"WithdrawalRequests": information.WithdrawalRequests,
+	})
+
+	if err != nil {
+		http.Error(w, "Something went wrong while trying to load the admin home page", http.StatusInternalServerError)
+	}
+}
+
 func (h *HandlerManager) logoutGetHandler(w http.ResponseWriter, r *http.Request) {
 	h.logout(w, r)
 }
@@ -1203,7 +1210,7 @@ func storeSessionCookie(s *sessions.Session, r *http.Request, w http.ResponseWri
 	s.Save(r, w)
 }
 
-func (h *HandlerManager) getSessionOrLogout(w http.ResponseWriter, r *http.Request) (UserSession) {
+func (h *HandlerManager) getSessionOrLogout(w http.ResponseWriter, r *http.Request) (UserSession, error) {
 	session, err := h.cookieStore.Get(r, "session")
 
 	if err != nil {
@@ -1217,6 +1224,7 @@ func (h *HandlerManager) getSessionOrLogout(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		// cookie doesn't exist
 		h.logout(w, r)
+		return UserSession{}, err
 	}
 
 	userSession, err := GetSession(sessionCookie.SessionID)
@@ -1225,9 +1233,41 @@ func (h *HandlerManager) getSessionOrLogout(w http.ResponseWriter, r *http.Reque
 		// if the session is invalid, delete the cookie and redirect to the login pag
 
 		h.logout(w, r)
+		return UserSession{}, err
 	}
 
-	return userSession
+	return userSession, nil
+}
+
+func (h *HandlerManager) getAdminSessionOrLogout(w http.ResponseWriter, r *http.Request) (UserSession, error) {
+	session, err := h.cookieStore.Get(r, "session")
+
+	if err != nil {
+		log.Printf("session could not be decoded %s \n", err)
+		return UserSession{}, err
+	}
+
+	sessionCookie, err := getSessionCookie(session)
+
+	if err != nil {
+		// cookie doesn't exist
+		h.logout(w, r)
+		return UserSession{}, err
+	}
+
+	userSession, err := GetSession(sessionCookie.SessionID)
+
+	if userSession.Role != "admin" {
+		http.Error(w, "Forbidden: not an admin", http.StatusForbidden)
+		return UserSession{}, ErrNotAdmin
+	}
+
+	if err != nil {
+		h.logout(w, r)
+		return UserSession{}, err
+	}
+
+	return userSession, nil
 }
 
 func (h *HandlerManager) logout(w http.ResponseWriter, r *http.Request) {
