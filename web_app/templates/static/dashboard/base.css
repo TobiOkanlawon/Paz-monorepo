@@ -37,6 +37,10 @@ aside#sidebar > nav > ul > li {
     margin: 24px 4px;
 }
 
+aside#sidebar a, aside#sidebar a:link, aside#sidebar a:visited {
+    color: inherit;
+}
+
 #content-container > main {
     padding: 64px;
 }
