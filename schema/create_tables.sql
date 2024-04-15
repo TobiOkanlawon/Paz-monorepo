@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS solo_savings_account (
        account_id	   serial	NOT NULL,
        customer_id	   integer	NOT NULL UNIQUE,
        balance_in_k	   integer	NOT NULL,
+       balance_in_k	   integer	NOT NULL CHECK(balance_in_k > 0),
        -- the balance is stored in kobos
        CONSTRAINT solo_savings_account_pk PRIMARY KEY(account_id)
 );
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS family_vault_plan (
        savings_duration_in_d		    integer NOT NULL,
        savings_frequency		    frequency_type	NOT NULL,
        balance_in_k	       integer	NOT NULL,
+       balance_in_k	       integer	NOT NULL CHECK(balance_in_k > 0),
        is_active	       boolean	DEFAULT true,
        creator_id	       integer	NOT NULL,
        CONSTRAINT	       family_vault_plan_fk FOREIGN KEY (creator_id) REFERENCES customer (customer_id)
@@ -65,6 +67,7 @@ CREATE TABLE IF NOT EXISTS family_vault_plan_member (
 -- TODO: I have removed it because, for some reason, it has refused to work and I cannot spend too much time here
 );
 
+       amount_in_k		    integer	NOT NULL CHECK(amount_in_k > 0),
 CREATE TABLE IF NOT EXISTS target_savings_plan (
        target_savings_plan_id	 serial NOT NULL,
        customer_id		 integer    NOT NULL,
@@ -72,6 +75,7 @@ CREATE TABLE IF NOT EXISTS target_savings_plan (
        description	       varchar(128) ,
        balance_in_k	       integer	NOT NULL,
        goal_in_k	       integer	NOT NULL
+       balance_in_k	       integer	NOT NULL CHECK(balance_in_k > 0),
 );
 
 CREATE TABLE IF NOT EXISTS loans_account (
@@ -110,6 +114,7 @@ CREATE TABLE IF NOT EXISTS investment_account (
        customer_id 		integer	NOT NULL,
        account_id		serial 	NOT NULL,
        balance_in_k		integer NOT NULL,
+       balance_in_k		integer NOT NULL CHECK(balance_in_k > 0),
        CONSTRAINT investment_account_pk PRIMARY KEY(account_id)
 );
 
