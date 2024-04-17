@@ -13,8 +13,10 @@
     <noscript>Javascript is required to use this application</noscript>
     <!-- TODO: get the meta charset, device width etc -->
   </head>
-  <body id="body">
-    {{template "aside" .}}
+  <body id="pre-auth-body">
+    <aside>
+      {{template "aside" .}}
+    </aside>
     {{template "main" .}}
     
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>

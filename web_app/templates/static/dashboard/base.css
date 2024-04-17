@@ -18,6 +18,16 @@ header {
     height: 72px;
 }
 
+header .left-side {
+    display: flex;
+    padding: 4px;
+}
+
+header .left-side .img {
+    height: 80%;
+    width: 80%;
+}
+
 #content-container {
     display: grid;
     grid-template-columns: 1fr 4fr;
@@ -44,3 +54,4 @@ aside#sidebar a, aside#sidebar a:link, aside#sidebar a:visited {
 #content-container > main {
     padding: 64px;
 }
+

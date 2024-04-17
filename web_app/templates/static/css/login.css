@@ -85,3 +85,6 @@ input[type="submit"] {
     font-weight: 700;
 }
 
+@media (max-width: 600px) {
+    
+}

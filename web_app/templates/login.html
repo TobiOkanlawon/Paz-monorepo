@@ -3,19 +3,18 @@
 <link href="/static/css/login.css" rel="stylesheet"/>
 {{end}}
 {{define "aside"}}
-<aside>
   <img id="paz-logo" src="/static/images/images/PAZPryLogoTextInverted 1.png" alt="Paz logo">
   <div id="aside-content">
     <h2>Welcome</h2>
     <p>Powering your dreams!</p>
     <img alt="background-image" src="/static/images/login-background.png"/>
   </div>
-</aside>
 {{end}}
 {{define "main"}}
-<main>
-  <h1>Login to your account</h1>
+  <main>
+    <img id="paz-logo-main" src="/static/images/images/PAZPryLogoTextInverted 1.png" alt="Paz logo">
   <form action="/login" method="POST">
+    <h1>Login to your account</h1>
     {{.csrfField}}
     <div class="form-control">
       <label for="email">Email Address</label>

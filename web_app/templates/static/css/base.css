@@ -183,3 +183,58 @@ a.button {
     margin-bottom: 12px;
 }
 
+/* pre-auth base */
+
+
+#pre-auth-body main form h1 {
+    text-align: center;
+}
+
+#pre-auth-body aside {
+    text-align: center;
+}
+
+#paz-logo-main {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    #pre-auth-body {
+	grid-template-columns: 1fr;
+	background-color: var(--primary-blue-3);
+    }
+    
+    #pre-auth-body aside {
+	display: none;
+    }
+
+    #pre-auth-body main {
+	padding: 48px;
+    }
+
+    #pre-auth-body form {
+	background-color: white;
+	border-radius: 16px;
+    }
+
+    #pre-auth-body main form h1 {
+	padding: 24px 0px;
+	font-size: 1.5em;
+    }
+
+    #paz-logo-main {
+	display: block;
+	margin: 48px 0px;
+    }
+}
+
+@media (max-width: 1024px) {
+    #pre-auth-body main {
+	padding: 36px;
+    }
+
+    #paz-logo-main {
+	display: block;
+	margin: 48px 0px;
+    }
+}
