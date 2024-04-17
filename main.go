@@ -7,9 +7,9 @@ import (
 	"os"
 
 	web_backend "github.com/TobiOkanlawon/PazBackend/web_app"
-	"github.com/gorilla/csrf"
 )
 
+// TODO: Make this an env variable as well
 const port string = "8001"
 
 func main() {
@@ -31,8 +31,5 @@ func main() {
 		log.Fatalf("error with setting up server %s \n", err)
 	}
 	fmt.Printf("Running the server at port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), csrf.Protect(
-		[]byte(secretKey),
-		csrf.Path("/"),
-	)(handlerFunc)))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), handlerFunc))
 }

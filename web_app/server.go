@@ -8,6 +8,7 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 )
 
@@ -28,6 +29,12 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 
 	handlerManager := NewHandlerManager(partialsManager, &db, cookieStore, paystackPublicKey, paystackSecretKey)
 	r := chi.NewRouter()
+
+	csrfMiddleware := csrf.Protect(
+		[]byte(secretKey),
+		// TODO: Add secure to the list, base if off a debug environment variable
+		// csrf.Secure(),
+	)
 	
 	// TODO: the logger should also be injected
 	r.Use(middleware.RequestID)
@@ -35,37 +42,55 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 
+	dashboardSubRouter := chi.NewRouter()
+	dashboardSubRouter.Use(csrfMiddleware)
+	r.Mount("/dashboard", dashboardSubRouter)
+	
+	adminSubRouter := chi.NewRouter()
+	adminSubRouter.Use(csrfMiddleware)
+	r.Mount("/admin", adminSubRouter)
+	
+	preAuthSubRouter := chi.NewRouter()
+	preAuthSubRouter.Use(csrfMiddleware)
+	r.Mount("/", preAuthSubRouter)
+
+	apiSubRouter := chi.NewRouter()
+	r.Mount("/utility", apiSubRouter)
+
 	// TODO: handle post-slashes
-	r.Get("/", handlerManager.indexGetHandler)
-	r.Get("/dashboard/home", handlerManager.dashboardHomeGetHandler)
-	r.Get("/login", handlerManager.loginGetHandler)
-	r.Post("/login", handlerManager.loginPostHandler)
-	r.Get("/register", handlerManager.registerGetHandler)
-	r.Post("/register", handlerManager.registerPostHandler)
-	r.Get("/verify", handlerManager.verifyEmailGetHandler)
-	r.Get("/forgot-password", handlerManager.forgotPasswordGetHandler)
-	r.Get("/dashboard/profile", handlerManager.profileGetHandler)
-	r.Get("/dashboard/savings", handlerManager.savingsGetHandler)
-	r.Get("/dashboard/loans", handlerManager.loansGetHandler)
-	r.Get("/dashboard/loans/get-loan", handlerManager.getLoansGetHandler)
-	r.Post("/dashboard/loans/get-loan", handlerManager.getLoansPostHandler)
-	r.Get("/dashboard/investments", handlerManager.investmentsGetHandler)
-	r.Get("/dashboard/investments/form", handlerManager.investmentsFormGetHandler)
-	r.Post("/dashboard/investments/form", handlerManager.investmentsFormPostHandler)
-	r.Get("/dashboard/fragments/bvn", handlerManager.bvnModalGetHandler)
-	r.Post("/dashboard/fragments/bvn", handlerManager.addBVNPostHandler)
-	r.Get("/dashboard/savings/family-vault", handlerManager.familyVaultGetHandler)
-	r.Post("/dashboard/savings/family-vault", handlerManager.familyVaultPostHandler)
-	r.Get("/dashboard/savings/family-vault/{planID}", handlerManager.familyVaultGetHandler)
-	r.Get("/dashboard/savings/target-savings", handlerManager.targetSavingsGetHandler)
-	r.Get("/dashboard/savings/solo-saver", handlerManager.soloSavingsGetHandler)
-	r.Post("/dashboard/savings/solo-saver", handlerManager.soloSavingsAddFunds)
-	r.Get("/dashboard/thrift", handlerManager.thriftGetHandler)
-	r.Get("/dashboard/thrift/new", handlerManager.thriftNewGetHandler)
-	r.Get("/dashboard/thrift/{thriftID}", handlerManager.thriftPlanGetHandler)
-	r.Post("/utility/paystack-verification-webhook", handlerManager.paystackVerificationWebhook)
-	r.Get("/dashboard/logout", handlerManager.loginGetHandler)
-	r.Get("/admin", handlerManager.adminHomeGetHandler)
+	preAuthSubRouter.Get("/", handlerManager.indexGetHandler)
+	preAuthSubRouter.Get("/login", handlerManager.loginGetHandler)
+	preAuthSubRouter.Post("/login", handlerManager.loginPostHandler)
+	preAuthSubRouter.Get("/register", handlerManager.registerGetHandler)
+	preAuthSubRouter.Post("/register", handlerManager.registerPostHandler)
+	preAuthSubRouter.Get("/forgot-password", handlerManager.forgotPasswordGetHandler)
+	preAuthSubRouter.Get("/verify", handlerManager.verifyEmailGetHandler)
+	
+	dashboardSubRouter.Get("/home", handlerManager.dashboardHomeGetHandler)
+	dashboardSubRouter.Get("/profile", handlerManager.profileGetHandler)
+	dashboardSubRouter.Get("/savings", handlerManager.savingsGetHandler)
+	dashboardSubRouter.Get("/loans", handlerManager.loansGetHandler)
+	dashboardSubRouter.Get("/loans/get-loan", handlerManager.getLoansGetHandler)
+	dashboardSubRouter.Post("/loans/get-loan", handlerManager.getLoansPostHandler)
+	dashboardSubRouter.Get("/investments", handlerManager.investmentsGetHandler)
+	dashboardSubRouter.Get("/investments/form", handlerManager.investmentsFormGetHandler)
+	dashboardSubRouter.Post("/investments/form", handlerManager.investmentsFormPostHandler)
+	dashboardSubRouter.Get("/fragments/bvn", handlerManager.bvnModalGetHandler)
+	dashboardSubRouter.Post("/fragments/bvn", handlerManager.addBVNPostHandler)
+	dashboardSubRouter.Get("/savings/family-vault", handlerManager.familyVaultGetHandler)
+	dashboardSubRouter.Post("/savings/family-vault", handlerManager.familyVaultPostHandler)
+	dashboardSubRouter.Get("/savings/family-vault/{planID}", handlerManager.familyVaultGetHandler)
+	dashboardSubRouter.Get("/savings/target-savings", handlerManager.targetSavingsGetHandler)
+	dashboardSubRouter.Get("/savings/solo-saver", handlerManager.soloSavingsGetHandler)
+	dashboardSubRouter.Post("/savings/solo-saver", handlerManager.soloSavingsAddFunds)
+	dashboardSubRouter.Get("/thrift", handlerManager.thriftGetHandler)
+	dashboardSubRouter.Get("/thrift/new", handlerManager.thriftNewGetHandler)
+	dashboardSubRouter.Get("/thrift/{thriftID}", handlerManager.thriftPlanGetHandler)	
+	dashboardSubRouter.Get("/logout", handlerManager.loginGetHandler)
+	
+	apiSubRouter.Post("/paystack-verification-webhook", handlerManager.paystackVerificationWebhook)
+	
+	adminSubRouter.Get("/", handlerManager.adminHomeGetHandler)
 
 	fs := http.FileServer(http.Dir("./web_app/templates/static/"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fs))
