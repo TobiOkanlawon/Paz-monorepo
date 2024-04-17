@@ -95,9 +95,8 @@ const UpdateSoloSaverPaymentInformationStatement = `WITH transaction_update AS (
   UPDATE payment_processor_transaction
   SET verification_status = 'SUCCESSFUL',
   fulfillment_status = 'SUCCESSFUL',
-  payment_amount_in_k = $1,
-  customer_id = $2
-  WHERE reference_number = $3
+  payment_amount_in_k = $1
+  WHERE reference_number = $2
   AND verification_status = 'PENDING'
   RETURNING payment_amount_in_k, customer_id
 )

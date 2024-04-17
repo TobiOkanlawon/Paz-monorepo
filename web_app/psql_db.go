@@ -338,6 +338,7 @@ func (d *DB) GetLoansScreenInformation(userID uint) (LoansScreenInformation, err
 
 	if err := d.Conn.QueryRow(GetLoansScreenInformationStatement, userID).Scan(
 		&balance,
+		&information.hasPendingLoans,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return information, fmt.Errorf("error %s returned from query", err.Error())
@@ -460,11 +461,11 @@ func (d *DB) CreatePayment(userID, planID uint, referenceNumber uuid.UUID, payme
 }
 
 // Takes a paystack payment, saves the paystack information then also for this function at least, it updates the user's solo saver account
-func (d *DB) UpdateSoloSaverPaymentInformation(amountInK uint64, customerID uint, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error) {
+func (d *DB) UpdateSoloSaverPaymentInformation(amountInK uint64, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error) {
 	var information SoloSaverPaymentInformation
 
-	if _, err := d.Conn.Exec(UpdateSoloSaverPaymentInformationStatement, amountInK, customerID, referenceNumber); err != nil {
-		return information, nil
+	if _, err := d.Conn.Exec(UpdateSoloSaverPaymentInformationStatement, amountInK, referenceNumber); err != nil {
+		return information, err
 	}
 	
 	return information, nil
