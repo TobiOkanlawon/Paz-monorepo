@@ -3,6 +3,7 @@ package web_app
 import (
 	"encoding/gob"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 
@@ -99,10 +100,11 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 		firstError := cleanUp()
 		secondError := db.Conn.Close()
 		if firstError != nil {
-			return firstError
+			log.Printf("error with cleanup %s \n", firstError)
 		}
 		if secondError != nil {
-			return secondError
+			log.Printf("error with cleanup %s \n", secondError)
+			os.Exit(1)
 		}
 		return nil
 	}
