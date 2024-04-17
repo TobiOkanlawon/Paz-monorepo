@@ -11,61 +11,7 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-type RouteURL string
-
 var ErrorEmptyRouteMap error = errors.New("passed empty RouteMap as arg")
-
-type RouteTuple struct {
-	// TODO: Make this into an enum to mamke it safer
-	Method  string
-	Handler func(w http.ResponseWriter, r *http.Request)
-}
-
-type RouteMap map[RouteURL][]RouteTuple
-
-func NewRouter(routes RouteMap) *chi.Mux {
-	r := chi.NewRouter()
-	// TODO: the logger should also be injected
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Recoverer)
-
-	for url, route_tuple := range routes {
-		for _, tuple := range route_tuple {
-			r.Method(tuple.Method, string(url), http.HandlerFunc(tuple.Handler))
-		}
-	}
-
-	return r
-}
-
-func StartConfigurableWebAppServer(routes RouteMap, secretKey []byte) (handler http.Handler, cleanup func() error, err error) {
-
-	// Removed file logging because it wasn't working properly on the server and the journalctl logging seemed to be doing much better
-
-	// f, err := os.OpenFile("log.txt", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
-	// if err != nil {
-	// 	log.Fatalf("error opening log file: %v", err)
-	// }
-
-	// log.SetOutput(f)
-	// log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags)
-
-	if len(routes) == 0 {
-		return nil, func() error { return nil }, ErrorEmptyRouteMap
-	}
-
-	r := NewRouter(routes)
-	// TODO: test and DI the fileServer
-	fs := http.FileServer(http.Dir("./web_app/templates/static/"))
-	r.Handle("/static/*", http.StripPrefix("/static/", fs))
-
-	// TODO: consider having all templates parsed before server initialization
-	// tpl = template.Must(template.ParseGlob("templates/*.gohtml"))
-
-	return r, func() error { return nil }, nil
-}
 
 // TODO: write tests for the handlers getting passed in
 func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string) (handler http.Handler, cleanUp func() error, err error) {
@@ -81,90 +27,48 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	// store.Options.Secure = true
 
 	handlerManager := NewHandlerManager(partialsManager, &db, cookieStore, paystackPublicKey, paystackSecretKey)
-	routeMap := make(RouteMap)
+	r := chi.NewRouter()
+	
+	// TODO: the logger should also be injected
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Recoverer)
+
 	// TODO: handle post-slashes
-	routeMap[RouteURL("/")] = []RouteTuple{
-		{"GET", handlerManager.indexGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/home")] = []RouteTuple{
-		{"GET", handlerManager.dashboardHomeGetHandler},
-	}
-	routeMap[RouteURL("/login")] = []RouteTuple{
-		{"GET", handlerManager.loginGetHandler},
-		{"POST", handlerManager.loginPostHandler},
-	}
-	routeMap[RouteURL("/register")] = []RouteTuple{
-		{"GET", handlerManager.registerGetHandler},
-		{"POST", handlerManager.registerPostHandler},
-	}
-	routeMap[RouteURL("/verify")] = []RouteTuple{
-		{"GET", handlerManager.verifyEmailGetHandler},
-	}
-	routeMap[RouteURL("/forgot-password")] = []RouteTuple{
-		{"GET", handlerManager.forgotPasswordGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/profile")] = []RouteTuple{
-		{"GET", handlerManager.profileGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/savings")] = []RouteTuple{
-		{"GET", handlerManager.savingsGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/loans")] = []RouteTuple{
-		{"GET", handlerManager.loansGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/loans/get-loan")] = []RouteTuple{
-		{"GET", handlerManager.getLoansGetHandler},
-		{"POST", handlerManager.getLoansPostHandler},
-	}
-	routeMap[RouteURL("/dashboard/investments")] = []RouteTuple{
-		{"GET", handlerManager.investmentsGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/investments/form")] = []RouteTuple{
-		{"GET", handlerManager.investmentsFormGetHandler},
-		{"POST", handlerManager.investmentsFormPostHandler},
-	}
-	routeMap[RouteURL("/dashboard/fragments/bvn")] = []RouteTuple{
-		{"GET", handlerManager.bvnModalGetHandler},
-		{"POST", handlerManager.addBVNPostHandler},
-	}
-	routeMap[RouteURL("/dashboard/savings/family-vault")] = []RouteTuple{
-		{"GET", handlerManager.familyVaultGetHandler},
-		{"POST", handlerManager.familyVaultPostHandler},
-	}
-	routeMap[RouteURL("/dashboard/savings/family-vault/{planID}")] = []RouteTuple{
-		{"GET", handlerManager.familyVaultPlanGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/savings/target-savings")] = []RouteTuple{
-		{"GET", handlerManager.targetSavingsGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/savings/solo-saver")] = []RouteTuple{
-		{"GET", handlerManager.soloSavingsGetHandler},
-		{"POST", handlerManager.soloSavingsAddFunds},
-	}
-	routeMap[RouteURL("/dashboard/thrift")] = []RouteTuple{
-		{"GET", handlerManager.thriftGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/thrift/new")] = []RouteTuple{
-		{"GET", handlerManager.thriftNewGetHandler},
-	}
-	routeMap[RouteURL("/dashboard/thrift/{thriftID}")] = []RouteTuple{
-		{"GET", handlerManager.thriftPlanGetHandler},
-	}
-	routeMap[RouteURL("/utility/paystack-verification-webhook")] = []RouteTuple{
-		{"POST", handlerManager.paystackVerificationWebhook},
-	}
-	routeMap[RouteURL("/dashboard/logout")] = []RouteTuple{
-		{"GET", handlerManager.logoutGetHandler},
-	}
-	routeMap[RouteURL("/admin")] = []RouteTuple{
-		{"GET", handlerManager.adminHomeGetHandler},
-	}
+	r.Get("/", handlerManager.indexGetHandler)
+	r.Get("/dashboard/home", handlerManager.dashboardHomeGetHandler)
+	r.Get("/login", handlerManager.loginGetHandler)
+	r.Post("/login", handlerManager.loginPostHandler)
+	r.Get("/register", handlerManager.registerGetHandler)
+	r.Post("/register", handlerManager.registerPostHandler)
+	r.Get("/verify", handlerManager.verifyEmailGetHandler)
+	r.Get("/forgot-password", handlerManager.forgotPasswordGetHandler)
+	r.Get("/dashboard/profile", handlerManager.profileGetHandler)
+	r.Get("/dashboard/savings", handlerManager.savingsGetHandler)
+	r.Get("/dashboard/loans", handlerManager.loansGetHandler)
+	r.Get("/dashboard/loans/get-loan", handlerManager.getLoansGetHandler)
+	r.Post("/dashboard/loans/get-loan", handlerManager.getLoansPostHandler)
+	r.Get("/dashboard/investments", handlerManager.investmentsGetHandler)
+	r.Get("/dashboard/investments/form", handlerManager.investmentsFormGetHandler)
+	r.Post("/dashboard/investments/form", handlerManager.investmentsFormPostHandler)
+	r.Get("/dashboard/fragments/bvn", handlerManager.bvnModalGetHandler)
+	r.Post("/dashboard/fragments/bvn", handlerManager.addBVNPostHandler)
+	r.Get("/dashboard/savings/family-vault", handlerManager.familyVaultGetHandler)
+	r.Post("/dashboard/savings/family-vault", handlerManager.familyVaultPostHandler)
+	r.Get("/dashboard/savings/family-vault/{planID}", handlerManager.familyVaultGetHandler)
+	r.Get("/dashboard/savings/target-savings", handlerManager.targetSavingsGetHandler)
+	r.Get("/dashboard/savings/solo-saver", handlerManager.soloSavingsGetHandler)
+	r.Post("/dashboard/savings/solo-saver", handlerManager.soloSavingsAddFunds)
+	r.Get("/dashboard/thrift", handlerManager.thriftGetHandler)
+	r.Get("/dashboard/thrift/new", handlerManager.thriftNewGetHandler)
+	r.Get("/dashboard/thrift/{thriftID}", handlerManager.thriftPlanGetHandler)
+	r.Post("/utility/paystack-verification-webhook", handlerManager.paystackVerificationWebhook)
+	r.Get("/dashboard/logout", handlerManager.loginGetHandler)
+	r.Get("/admin", handlerManager.adminHomeGetHandler)
 
-	handler, cleanUp, err = StartConfigurableWebAppServer(routeMap, secretKey)
-
-	if err != nil {
-		return nil, func() error { return nil }, err
-	}
+	fs := http.FileServer(http.Dir("./web_app/templates/static/"))
+	r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
 	cleanUpFunction := func() error {
 		firstError := cleanUp()
@@ -178,5 +82,5 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 		return nil
 	}
 
-	return handler, cleanUpFunction, nil
+	return r, cleanUpFunction, nil
 }
