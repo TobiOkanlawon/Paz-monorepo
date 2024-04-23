@@ -21,7 +21,16 @@ type PaystackPaymentSuccessful struct {
 	Data PaystackPaymentSuccessfulDataObject
 }
 
+type PaystackPaymentFailure struct {
+	Data PaystackPaymentFailureDataObject
+}
+
 type PaystackPaymentSuccessfulDataObject struct {
+	Amount          uint64    `json:"amount"`
+	ReferenceNumber uuid.UUID `json:"offline_reference"`
+}
+
+type PaystackPaymentFailureDataObject struct {
 	Amount          uint64    `json:"amount"`
 	ReferenceNumber uuid.UUID `json:"offline_reference"`
 }
@@ -90,14 +99,18 @@ func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *h
 		return
 	}
 
-	// if requestBody["event"] == "paymentrequest.failure" {
-	// 	_, err = h.store.UpdateSoloSaverPaymentFailure(transactionInformation.ReferenceNumber)
+	if jsonBody.Event == "paymentrequest.failure" {
+		var data PaystackPaymentFailure
+		err := json.NewDecoder(r.Body).Decode(&data)
 
-	// 	if err != nil {
-	// 		log.Printf("Couldn't update payment information with error %s", err)
-	// 	}
-	// 	return
-	// }
+		// TODO: Add payment failure reason
+		_, err = h.store.UpdateSoloSaverPaymentFailure(data.Data.ReferenceNumber)
+
+		if err != nil {
+			log.Printf("Couldn't update payment information with error %s", err)
+		}
+		return
+	}
 
 	return
 }

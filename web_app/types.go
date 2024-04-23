@@ -25,7 +25,7 @@ type IStore interface {
 	GetLoanScreenInformation(userID uint) (GetLoanScreenInformation, error)
 	CreateNewFamilyVault(userID uint, familyName, familyMemberEmail string, amount float64, frequency string, duration int64) (FamilyVaultInformation, error)
 	GetPaystackVerificationInformation(referenceNumber string) (PaystackTransactionInformation, error)
-	UpdateSoloSaverPaymentInformation(amountInK uint64, customerID uint, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
+	UpdateSoloSaverPaymentInformation(amountInK uint64, referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
 	UpdateSoloSaverPaymentFailure(referenceNumber uuid.UUID) (SoloSaverPaymentInformation, error)
 	CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error)
 	GetInvestmentsScreenInformation(userID uint) (InvestmentsScreenInformation, error)
@@ -131,7 +131,8 @@ type TargetSavingsPlanScreenInformation struct {
 }
 
 type LoansScreenInformation struct {
-	Balance int64
+	Balance         int64
+	hasPendingLoans bool
 }
 
 type ThriftScreenInformation struct {
@@ -228,7 +229,6 @@ type PaymentInformation struct {
 }
 
 type InvestmentApplicationInformation struct {
-	
 }
 
 type InvestmentsScreenInformation struct {
@@ -236,7 +236,7 @@ type InvestmentsScreenInformation struct {
 }
 
 type AdminHomeScreenInformation struct {
-	LoanRequests int
+	LoanRequests        int
 	InvestmentsRequests int
-	WithdrawalRequests int
+	WithdrawalRequests  int
 }
