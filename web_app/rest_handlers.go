@@ -62,7 +62,7 @@ func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *h
 		}
 		
 		_, err = h.store.UpdateSoloSaverPaymentInformation(amount, transactionInformation.CustomerID, transactionInformation.ReferenceNumber)
-
+		
 		if err != nil {
 			log.Printf("Couldn't update payment information with error %s", err)
 		}
