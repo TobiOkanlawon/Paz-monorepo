@@ -108,7 +108,8 @@ UPDATE solo_savings_account
 SET balance_in_k = balance_in_k + transaction_update.payment_amount_in_k
 FROM transaction_update WHERE solo_savings_account.customer_id = transaction_update.customer_id;
 `
-const UpdateSoloSaverPaymentFailureStatement = `UPDATE payment_processor_transaction SET verification_status = 'FAILED', fulfillment_status = 'FAILED' WHERE reference_number = $1 AND verification_status = 'PENDING';`
+const UpdateSoloSaverPaymentFailureStatement = `--UPDATE 
+`
 
 const GetInvestmentsScreenInformationStatement = `SELECT balance_in_k FROM investment_account WHERE customer_id = $1;`
 
