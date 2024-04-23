@@ -382,7 +382,9 @@ func (h *HandlerManager) savingsGetHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "base", savingsInformation)
+	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+		"Balance": humanize.Comma(int64(savingsInformation.Balance)),
+	})
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
