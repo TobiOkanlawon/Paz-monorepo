@@ -20,10 +20,10 @@ type DB struct {
 }
 
 var (
-	ErrAccountDoesNotExist = errors.New("account does not exist")
-	ErrAccountAlreadyExists = errors.New("account already exists")
-	ErrUserNotVerified = errors.New("user's email is not yet verified")
-	ErrPasswordIncorrect = errors.New("password incorrect")
+	ErrAccountDoesNotExist         = errors.New("account does not exist")
+	ErrAccountAlreadyExists        = errors.New("account already exists")
+	ErrUserNotVerified             = errors.New("user's email is not yet verified")
+	ErrPasswordIncorrect           = errors.New("password incorrect")
 	ErrReferenceNumberDoesNotExist = errors.New("this transaction's reference number does not exist in our records")
 )
 
@@ -32,7 +32,7 @@ func (d *DB) Connect() {
 	// if status == true {
 	// 	log.Fatal("failed while trying to load db host from env")
 	// }
-	
+
 	// At some point, I must have thought that I needed the host
 	// env variable, but it seems like I might not
 	user, status := os.LookupEnv("PAZ_WEB_DB_USER")
@@ -51,7 +51,7 @@ func (d *DB) Connect() {
 	if status != true {
 		log.Fatal("failed while trying to load db password from env")
 	}
-	
+
 	connectionStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", user, password, dbName, port)
 
 	db, err := sql.Open("postgres", connectionStr)
@@ -84,7 +84,7 @@ func (d *DB) GetHomeScreenInformation(userID uint) (HomeScreenInformation, error
 		&loansBalance,
 		&investmentBalance,
 	); err != nil {
-		log.Println(err);
+		log.Println(err)
 		if err == sql.ErrNoRows {
 			return information, fmt.Errorf("error %s returned from query", err.Error())
 		}
@@ -105,7 +105,7 @@ func (d *DB) AuthenticateUser(email string, password string) (LoginPostInformati
 	var passwordHash string
 
 	email = strings.ToLower(email)
-	
+
 	if err := d.Conn.QueryRow(AuthenticateUserStatement, email).Scan(
 		&information.ID,
 		&information.Email,
@@ -126,7 +126,7 @@ func (d *DB) AuthenticateUser(email string, password string) (LoginPostInformati
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil {
 		return information, ErrPasswordIncorrect
 	}
-	
+
 	return information, nil
 }
 
@@ -198,7 +198,7 @@ func (d *DB) GetSavingsScreenInformation(userID uint) (SavingsScreenInformation,
 
 	// the money data is stored as kobo. Change it to naira here
 	if transitoryBalance.Valid {
-		information.Balance = convertToNaira(transitoryBalance.Int64)		
+		information.Balance = convertToNaira(transitoryBalance.Int64)
 	}
 
 	return information, nil
@@ -227,7 +227,7 @@ func (d *DB) GetFamilyVaultScreenInformation(userID uint) (FamilyVaultScreenInfo
 		return FamilyVaultScreenInformation{}, err
 	}
 
-	defer rows.Close();
+	defer rows.Close()
 
 	for rows.Next() {
 		plan := new(FamilyVaultBasicPlan)
@@ -252,7 +252,7 @@ func (d *DB) GetFamilyVaultScreenInformation(userID uint) (FamilyVaultScreenInfo
 	return information, nil
 }
 
-func (d *DB) GetFamilyVaultPlanScreenInformation(userID uint, planID int) (FamilyVaultPlanScreenInformation, error){
+func (d *DB) GetFamilyVaultPlanScreenInformation(userID uint, planID int) (FamilyVaultPlanScreenInformation, error) {
 	var information FamilyVaultPlanScreenInformation
 	var description sql.NullString
 	var creatorID int
@@ -275,8 +275,7 @@ func (d *DB) GetFamilyVaultPlanScreenInformation(userID uint, planID int) (Famil
 	return information, nil
 }
 
-
-func (d *DB) GetSoloSaverScreenInformation(userID uint) (SoloSaverScreenInformation, error){
+func (d *DB) GetSoloSaverScreenInformation(userID uint) (SoloSaverScreenInformation, error) {
 	var information SoloSaverScreenInformation
 	var balance sql.NullInt64
 	var email sql.NullString
@@ -305,13 +304,13 @@ func (d *DB) GetTargetSavingsScreenInformation(userID uint) (TargetSavingsScreen
 	var information TargetSavingsScreenInformation
 	var balance sql.NullInt64
 	var plans []TargetSavingsBasicPlan
-	
+
 	rows, err := d.Conn.Query(GetTargetSavingsScreenInformationStatement, userID)
 	if err == sql.ErrNoRows {
 		return information, err
 	}
 
-	defer rows.Close();
+	defer rows.Close()
 
 	for rows.Next() {
 		plan := new(TargetSavingsBasicPlan)
@@ -323,7 +322,7 @@ func (d *DB) GetTargetSavingsScreenInformation(userID uint) (TargetSavingsScreen
 		if err != nil {
 			return information, err
 		}
-		plan.CompletionPercentage = uint((plan.Balance/plan.Goal) * 100)
+		plan.CompletionPercentage = uint((plan.Balance / plan.Goal) * 100)
 		plans = append(plans, *plan)
 	}
 
@@ -338,7 +337,7 @@ func (d *DB) GetLoansScreenInformation(userID uint) (LoansScreenInformation, err
 
 	if err := d.Conn.QueryRow(GetLoansScreenInformationStatement, userID).Scan(
 		&balance,
-		&information.hasPendingLoans,
+		&information.HasPendingLoans,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return information, fmt.Errorf("error %s returned from query", err.Error())
@@ -381,7 +380,7 @@ func (d *DB) RegisterUser(firstName, lastName, email, password string) (Register
 	if err != nil {
 		return information, err
 	}
-	
+
 	return information, nil
 }
 
@@ -394,7 +393,7 @@ func (d *DB) CreateLoanApplication(userID uint, amount, termDuration uint64, bvn
 		return information, fmt.Errorf("Error while executing statement: %s", err)
 	}
 
-	return information, nil	
+	return information, nil
 }
 
 func (d *DB) GetLoanScreenInformation(userID uint) (GetLoanScreenInformation, error) {
@@ -406,9 +405,9 @@ func (d *DB) GetLoanScreenInformation(userID uint) (GetLoanScreenInformation, er
 	if err != nil {
 		return information, err
 	}
-	
+
 	err = statement.QueryRow(userID).Scan(&information.HasValidBVN)
-	
+
 	// TODO: after BVN validation step, this should change
 
 	if err != nil {
@@ -456,7 +455,7 @@ func (d *DB) CreatePayment(userID, planID uint, referenceNumber uuid.UUID, payme
 		log.Printf("An error occured while trying to create a pending payment %s", err)
 		return information, nil
 	}
-	
+
 	return information, nil
 }
 
@@ -467,7 +466,7 @@ func (d *DB) UpdateSoloSaverPaymentInformation(amountInK uint64, referenceNumber
 	if _, err := d.Conn.Exec(UpdateSoloSaverPaymentInformationStatement, amountInK, referenceNumber); err != nil {
 		return information, err
 	}
-	
+
 	return information, nil
 }
 
@@ -511,7 +510,16 @@ func (d *DB) GetInvestmentsScreenInformation(userID uint) (InvestmentsScreenInfo
 }
 
 func (d *DB) CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error) {
-	return InvestmentApplicationInformation{}, nil
+
+	formattedDateOfEmployment := yearOfEmployment.Format("2006-01-02")
+	convertedInvestmentAmount := investmentAmount * 100
+	
+	var information InvestmentApplicationInformation
+	if _, err := d.Conn.Exec(CreateInvestmentApplicationStatement, userID, employmentInformation, formattedDateOfEmployment, employerName, investmentTenure, taxIdentificationNumber, bankAccountName, bankAccountNumber, convertedInvestmentAmount); err != nil {
+		return information, err
+	}
+
+	return information, nil 
 }
 
 func (d *DB) GetAdminHomeScreenInformation(userID uint) (AdminHomeScreenInformation, error) {
@@ -544,7 +552,7 @@ func convertFrequency(frequency string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Unknown frequency specified %s", frequency))
 }
 
-func HashPassword(password string) (string, error){
+func HashPassword(password string) (string, error) {
 	// the second argument is the cost,
 	// which I suppose is how many times the hash is rehashed
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 16)
@@ -552,6 +560,6 @@ func HashPassword(password string) (string, error){
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(hash), nil
 }

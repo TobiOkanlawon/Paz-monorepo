@@ -132,7 +132,7 @@ type TargetSavingsPlanScreenInformation struct {
 
 type LoansScreenInformation struct {
 	Balance         int64
-	hasPendingLoans bool
+	HasPendingLoans bool
 }
 
 type ThriftScreenInformation struct {
