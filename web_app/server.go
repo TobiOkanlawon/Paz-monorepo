@@ -66,7 +66,10 @@ func WebAppServer(secretKey []byte, paystackPublicKey, paystackSecretKey string)
 	preAuthSubRouter.Post("/register", handlerManager.registerPostHandler)
 	preAuthSubRouter.Get("/forgot-password", handlerManager.forgotPasswordGetHandler)
 	preAuthSubRouter.Get("/verify", handlerManager.verifyEmailGetHandler)
-	
+
+	// TODO: actually, change the dashboard "/" route to redirect to the /home, or the other way
+	// But there really should only be one way to do these things
+	dashboardSubRouter.Get("/", handlerManager.dashboardHomeGetHandler)
 	dashboardSubRouter.Get("/home", handlerManager.dashboardHomeGetHandler)
 	dashboardSubRouter.Get("/profile", handlerManager.profileGetHandler)
 	dashboardSubRouter.Get("/savings", handlerManager.savingsGetHandler)
