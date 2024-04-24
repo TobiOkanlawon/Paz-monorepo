@@ -109,10 +109,12 @@ CREATE TABLE IF NOT EXISTS investment_application (
        -- this tracks whether the admin has accepted the investment request or not
        status					  status_type			 NOT NULL DEFAULT 'PENDING',
        -- tax identification number
-       tin    integer NOT NULL,
+       tin    bigint NOT NULL,
        bank_account_name  varchar(64)	NOT NULL,
-       bank_account_number		integer	NOT NULL,
-       CONSTRAINT investment_application_pk PRIMARY KEY(investment_account_id),
+       bank_account_number		bigint	NOT NULL,
+       amount_in_k			bigint NOT NULL DEFAULT 0,
+       -- TODO: Remove that default when we fix the migraitions
+       CONSTRAINT investment_application_pk PRIMARY KEY(investment_application_id),
        CONSTRAINT investment_account_fk	FOREIGN KEY (investment_account_id) REFERENCES investment_account (account_id)
 );     
 

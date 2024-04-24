@@ -7,18 +7,21 @@
   <h1>Investments</h1>
   <p>Begin your journey into the world of investing with Paz</p>
 
-  <form action="/dashboard/investments" method="POST">
+  <form action="/dashboard/investments/form" method="POST">
     {{.csrfField}}
 
     <fieldset>
       <legend>Employment Information</legend>
 
-      <select id="employment-status" name="employment-status" required>
-	<option value="salaried">Salaried Employment</option>
-	<option value="self-employment">Self Employment</option>
-	<option value="retired">Retirement</option>
-	<option value="unemployed">Unemployed</option>
-      </select>
+      <div class="form-control">
+	<label for="employment-status">Employment Status</label>
+	<select id="employment-status" name="employment-status" required>
+	  <option value="salaried">Salaried Employment</option>
+	  <option value="self-employment">Self Employment</option>
+	  <option value="retired">Retirement</option>
+	  <option value="unemployed">Unemployed</option>
+	</select>
+      </div>
 
       {{if .Errors.EmploymentStatus}}
       <div class="form-control-error-container">
@@ -125,6 +128,8 @@
 	{{end}}
       </div>
     </fieldset>
+
+    <button class="primary" type="submit">Submit</button>
   </form>
 
   <!-- <div class="investments-info-card-container"> -->

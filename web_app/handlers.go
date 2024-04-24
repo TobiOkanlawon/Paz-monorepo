@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/TobiOkanlawon/go-sanatio"
 	"github.com/dustin/go-humanize"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -59,16 +60,30 @@ func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request
 	w.Header().Add("Content-Type", "text/html")
 	tmpl, err := template.ParseFiles("./web_app/templates/login.html", "./web_app/templates/layouts/pre_auth-base.html")
 	r.ParseForm()
+	var errorsMap = make(map[string]string)
 	email := r.PostFormValue("email")
 	if validateEmail(email) == false {
-		var errorsMap = make(map[string]string)
 		errorsMap["Email"] = "Your email is invalid"
 		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 			"Errors": errorsMap,
 		})
 		return
 	}
-	password := r.PostFormValue("password")
+
+	// validate password and return if it fails
+	passwordValidation := sanatio.NewStringValidator().SetValue(r.PostFormValue("password")).Required()
+	passwordErrors := passwordValidation.GetErrors()
+	if len(passwordErrors) != 0 {
+		errorsMap["Password"] = "You have to insert a password"
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Errors":         errorsMap,
+			csrf.TemplateTag: csrf.TemplateField(r),
+		})
+
+		return
+	}
+
+	password, _ := passwordValidation.GetValue()
 	loginInformation, err := h.store.AuthenticateUser(email, password)
 
 	// TODO: handle validation and CSRF
@@ -91,10 +106,6 @@ func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request
 
 		if err == ErrPasswordIncorrect {
 			errorsMap["Email"] = "Email or password is incorrect"
-		}
-
-		if err != nil {
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		}
 
 		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
@@ -166,12 +177,12 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 	tmpl, err := template.ParseFiles("./web_app/templates/register.html", "./web_app/templates/layouts/pre_auth-base.html")
 
 	r.ParseForm()
+	var errorsMap = make(map[string]string)
 	firstName := r.PostFormValue("first-name")
 	lastName := r.PostFormValue("last-name")
 	emailAddress := r.PostFormValue("email")
 
 	if validateEmail(emailAddress) == false {
-		var errorsMap = make(map[string]string)
 		errorsMap["Email"] = "Your email is invalid"
 		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 			"Errors": errorsMap,
@@ -180,21 +191,35 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	password := r.PostFormValue("password")
+	passwordValidator := sanatio.NewStringValidator().SetValue(password).Required()
+	if len(passwordValidator.GetErrors()) != 0 {
+		errorsMap["Password"] = "There's something wrong with your password"
+	}
+
 	confirmPassword := r.PostFormValue("confirm-password")
+	confirmPasswordValidator := sanatio.NewStringValidator().SetValue(confirmPassword).Required()
+
+	if len(confirmPasswordValidator.GetErrors()) != 0 {
+		errorsMap["Password"] = "There's something wrong with your password"
+	}
 
 	if password != confirmPassword {
+		// TODO: implement this password != confirmPassword as a sanatio validation
 		// TODO: implement the validation as HTMX fragment responses to cut on work
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		}
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Errors":         errorsMap,
+			csrf.TemplateTag: csrf.TemplateField(r),
+		})
+		return
+	}
+
+	if len(errorsMap) != 0 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-			"Errors": map[string]string{
-				"Password": "Password and Confirm Password fields do not match",
-			},
+			"Errors":         errorsMap,
 			csrf.TemplateTag: csrf.TemplateField(r),
 		})
 		return
@@ -213,10 +238,6 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 		} else {
 			errorsMap["General"] = "An error occured"
 			w.WriteHeader(http.StatusInternalServerError)
-		}
-
-		if err != nil {
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		}
 
 		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
@@ -425,7 +446,8 @@ func (h *HandlerManager) loansGetHandler(w http.ResponseWriter, r *http.Request)
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"Information": loansScreenInformation,
+		"Balance":         humanize.Comma(loansScreenInformation.Balance),
+		"HasPendingLoans": loansScreenInformation.HasPendingLoans,
 	})
 
 	if err != nil {
@@ -446,6 +468,10 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 
 	userSession, _ := h.getSessionOrLogout(w, r)
 
+	// TODO: check if the user has pending loans, or a pending loan application, then turn the user down
+
+	// TODO: Do so on the backend too, the user shouldn't be able
+	// to submit a loan application if they have a pending loan
 	information, err := h.store.GetLoanScreenInformation(userSession.UserID)
 
 	if err != nil {
@@ -586,7 +612,9 @@ func (h *HandlerManager) investmentsFormGetHandler(w http.ResponseWriter, r *htt
 
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
-	err := tmpl.ExecuteTemplate(w, "base", nil)
+	err := tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+		csrf.TemplateTag: csrf.TemplateField(r),
+	})
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -604,6 +632,8 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 	r.ParseForm()
 	var errorsMap = make(map[string]string)
 
+	// TODO: Redo the validation with sanatio
+
 	employmentStatus := r.PostFormValue("employment-status")
 
 	if employmentStatus == "" {
@@ -612,8 +642,17 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	// TODO: here, if the conversion fails, perhaps because of a malicious entry, there won't be any repercussions
-	// TODO: FIX THIS
+	if employmentStatus == "salaried" {
+		employmentStatus = "SALARIED"
+	} else if employmentStatus == "self-employed" {
+		employmentStatus = "SELF-EMPLOYED"
+	} else if employmentStatus == "retired" {
+		employmentStatus = "RETIRED"
+	} else if employmentStatus == "unemployed" {
+		employmentStatus = "UNEMPLOYED"
+	} else {
+		errorsMap["EmploymentStatus"] = "You have selected an invalid employment status"
+	}
 
 	yearOfEmploymentValue := r.PostFormValue("date-of-employment")
 
@@ -636,6 +675,7 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 		errorsMap["InvestmentAmount"] = "Something seems wrong with this field"
 	}
 
+	// implement a maximum for this field
 	tenure, err := strconv.ParseUint(r.PostFormValue("investment-tenure"), 10, 64)
 
 	if err != nil {
@@ -669,21 +709,6 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		log.Println(err)
-
-		// this is the default message
-		// errorsMap[""] = "An error occured"
-
-		// if err == ErrAccountDoesNotExist {
-		// 	errorsMap["Email"] = "Account does not exist"
-		// }
-
-		// if err == ErrUserNotVerified {
-		// 	errorsMap["Email"] = "Verify your email before trying to log in"
-		// }
-
-		// if err == ErrPasswordIncorrect {
-		// 	errorsMap["Email"] = "Email or password is incorrect"
-		// }
 
 		tmpl, err := template.ParseFiles(
 			"./web_app/templates/layouts/dashboard-base.html",

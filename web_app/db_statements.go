@@ -113,3 +113,16 @@ const GetInvestmentsScreenInformationStatement = `SELECT balance_in_k FROM inves
 
 const GetAdminHomeScreenInformationStatement = `SELECT count(loan_application.status = 'PENDING') AS ls, count(investment_application.status = 'PENDING') AS inv, count(withdrawal_application.status = 'PENDING') AS wa FROM loan_application, investment_application, withdrawal_application;
 `
+
+const CreateInvestmentApplicationStatement = `WITH check_pending_applications AS (
+    SELECT count(investment_account.account_id) as pending
+    FROM investment_application
+    JOIN investment_account ON investment_application.investment_account_id = investment_account.account_id
+    WHERE investment_account.customer_id = $1
+    AND status = 'PENDING'
+), get_customer_account_id AS (
+   SELECT investment_account.account_id AS account_id FROM investment_account, investment_application WHERE investment_application.investment_account_id = investment_account.account_id AND investment_account.customer_id = $1 LIMIT 1
+)
+INSERT INTO investment_application (investment_account_id, employment_status, date_of_employment, employer_name, tenure, tin, bank_account_name, bank_account_number, amount_in_k)
+SELECT account_id, $2, $3, $4, $5, $6, $7, $8, $9
+FROM get_customer_account_id WHERE (SELECT pending FROM check_pending_applications) = 0;`

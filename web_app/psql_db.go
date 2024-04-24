@@ -337,7 +337,7 @@ func (d *DB) GetLoansScreenInformation(userID uint) (LoansScreenInformation, err
 
 	if err := d.Conn.QueryRow(GetLoansScreenInformationStatement, userID).Scan(
 		&balance,
-		&information.hasPendingLoans,
+		&information.HasPendingLoans,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return information, fmt.Errorf("error %s returned from query", err.Error())
@@ -510,7 +510,16 @@ func (d *DB) GetInvestmentsScreenInformation(userID uint) (InvestmentsScreenInfo
 }
 
 func (d *DB) CreateInvestmentApplication(userID uint, employmentInformation string, yearOfEmployment time.Time, employerName string, investmentAmount uint64, investmentTenure uint64, taxIdentificationNumber uint64, bankAccountName string, bankAccountNumber uint64) (InvestmentApplicationInformation, error) {
-	return InvestmentApplicationInformation{}, nil
+
+	formattedDateOfEmployment := yearOfEmployment.Format("2006-01-02")
+	convertedInvestmentAmount := investmentAmount * 100
+	
+	var information InvestmentApplicationInformation
+	if _, err := d.Conn.Exec(CreateInvestmentApplicationStatement, userID, employmentInformation, formattedDateOfEmployment, employerName, investmentTenure, taxIdentificationNumber, bankAccountName, bankAccountNumber, convertedInvestmentAmount); err != nil {
+		return information, err
+	}
+
+	return information, nil 
 }
 
 func (d *DB) GetAdminHomeScreenInformation(userID uint) (AdminHomeScreenInformation, error) {
