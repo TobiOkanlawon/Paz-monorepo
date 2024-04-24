@@ -57,8 +57,17 @@ func (h *HandlerManager) loginGetHandler(w http.ResponseWriter, r *http.Request)
 
 func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html")
+	tmpl, err := template.ParseFiles("./web_app/templates/login.html", "./web_app/templates/layouts/pre_auth-base.html")
 	r.ParseForm()
 	email := r.PostFormValue("email")
+	if validateEmail(email) == false {
+		var errorsMap = make(map[string]string)
+		errorsMap["Email"] = "Your email is invalid"
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Errors": errorsMap,
+		})
+		return
+	}
 	password := r.PostFormValue("password")
 	loginInformation, err := h.store.AuthenticateUser(email, password)
 
@@ -83,8 +92,6 @@ func (h *HandlerManager) loginPostHandler(w http.ResponseWriter, r *http.Request
 		if err == ErrPasswordIncorrect {
 			errorsMap["Email"] = "Email or password is incorrect"
 		}
-
-		tmpl, err := template.ParseFiles("./web_app/templates/login.html", "./web_app/templates/layouts/pre_auth-base.html")
 
 		if err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -156,18 +163,29 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 	w.Header().Add("Content-Type", "text/html")
 	// TODO: Should return a fragment for htmx requests
 
+	tmpl, err := template.ParseFiles("./web_app/templates/register.html", "./web_app/templates/layouts/pre_auth-base.html")
+
 	r.ParseForm()
 	firstName := r.PostFormValue("first-name")
 	lastName := r.PostFormValue("last-name")
 	emailAddress := r.PostFormValue("email")
+
+	if validateEmail(emailAddress) == false {
+		var errorsMap = make(map[string]string)
+		errorsMap["Email"] = "Your email is invalid"
+		tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Errors": errorsMap,
+		})
+		return
+	}
+
 	password := r.PostFormValue("password")
 	confirmPassword := r.PostFormValue("confirm-password")
 
 	if password != confirmPassword {
 		// TODO: implement the validation as HTMX fragment responses to cut on work
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		tmpl, err := template.ParseFiles("./web_app/templates/register.html", "./web_app/templates/layouts/pre_auth-base.html")
-		
+
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -183,7 +201,7 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	// TODO: check that the user doesn't already exist
-	_, err := h.store.RegisterUser(firstName, lastName, emailAddress, password)
+	_, err = h.store.RegisterUser(firstName, lastName, emailAddress, password)
 
 	if err != nil {
 		log.Println(err)
@@ -196,8 +214,6 @@ func (h *HandlerManager) registerPostHandler(w http.ResponseWriter, r *http.Requ
 			errorsMap["General"] = "An error occured"
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-
-		tmpl, err := template.ParseFiles("./web_app/templates/register.html", "./web_app/templates/layouts/pre_auth-base.html")
 
 		if err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -302,7 +318,7 @@ func (h *HandlerManager) dashboardHomeGetHandler(w http.ResponseWriter, r *http.
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	userSession, _ := h.getSessionOrLogout(w, r)
-	
+
 	homeScreenInformation, err := h.store.GetHomeScreenInformation(userSession.UserID)
 
 	if err == sql.ErrNoRows {
@@ -442,7 +458,7 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
 		csrf.TemplateTag: csrf.TemplateField(r),
-		"ShowBVNField": !information.HasValidBVN,
+		"ShowBVNField":   !information.HasValidBVN,
 	})
 
 	if err != nil {
@@ -457,7 +473,7 @@ func (h *HandlerManager) getLoansGetHandler(w http.ResponseWriter, r *http.Reque
 func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	userSession, _ := h.getSessionOrLogout(w, r)
-	
+
 	w.Header().Add("Content-Type", "text/html")
 	r.ParseForm()
 	amount, err := strconv.ParseUint(r.FormValue("loan-amount"), 10, 64)
@@ -468,7 +484,7 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 	// TODO: here, if the conversion fails, perhaps because of malicious entry, there won't be any repercussions
 	// TODO: FIX THIS
 	duration, err := strconv.ParseUint(r.FormValue("term-duration"), 10, 64)
-	
+
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 	}
@@ -497,7 +513,7 @@ func (h *HandlerManager) getLoansPostHandler(w http.ResponseWriter, r *http.Requ
 		errorsMap["Error"] = "An error occurred"
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
-		log.Println(err);
+		log.Println(err)
 
 		// this is the default message
 		// errorsMap[""] = "An error occured"
@@ -587,7 +603,7 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 	userSession, _ := h.getSessionOrLogout(w, r)
 	r.ParseForm()
 	var errorsMap = make(map[string]string)
-	
+
 	employmentStatus := r.PostFormValue("employment-status")
 
 	if employmentStatus == "" {
@@ -595,7 +611,7 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
-	
+
 	// TODO: here, if the conversion fails, perhaps because of a malicious entry, there won't be any repercussions
 	// TODO: FIX THIS
 
@@ -605,9 +621,9 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 		errorsMap["DateOfEmployment"] = "This field is required"
 	}
 
-	convertedYearOfEmployment, err := time.Parse("YYYY-MM-DD", yearOfEmploymentValue);
+	convertedYearOfEmployment, err := time.Parse("YYYY-MM-DD", yearOfEmploymentValue)
 
-	employerName := r.PostFormValue("employer-name");
+	employerName := r.PostFormValue("employer-name")
 
 	if employerName == "" {
 		// TODO: make a validation abstraction
@@ -652,7 +668,7 @@ func (h *HandlerManager) investmentsFormPostHandler(w http.ResponseWriter, r *ht
 		errorsMap["Error"] = "An error occurred"
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
-		log.Println(err);
+		log.Println(err)
 
 		// this is the default message
 		// errorsMap[""] = "An error occured"
@@ -746,7 +762,7 @@ func (h *HandlerManager) familyVaultGetHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	userSession, _ := h.getSessionOrLogout(w, r)
-	
+
 	familyVaultInformation, err := h.store.GetFamilyVaultScreenInformation(userSession.UserID)
 
 	if err != nil {
@@ -758,8 +774,8 @@ func (h *HandlerManager) familyVaultGetHandler(w http.ResponseWriter, r *http.Re
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"Balance": familyVaultInformation.Balance,
-		"Plans":   familyVaultInformation.FamilyVaultBasicPlans,
+		"Balance":        familyVaultInformation.Balance,
+		"Plans":          familyVaultInformation.FamilyVaultBasicPlans,
 		csrf.TemplateTag: csrf.TemplateField(r),
 	})
 
@@ -835,11 +851,11 @@ func (h *HandlerManager) familyVaultPlanGetHandler(w http.ResponseWriter, r *htt
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"Information": familyVaultPlanInformation,
-		"Balance":     familyVaultPlanInformation.Balance,
-		"csrfToken":   csrf.Token(r),
+		"Information":     familyVaultPlanInformation,
+		"Balance":         familyVaultPlanInformation.Balance,
+		"csrfToken":       csrf.Token(r),
 		"ReferenceNumber": h.generatePaymentUUID(),
-		"PlanID": planID,
+		"PlanID":          planID,
 	})
 
 	if err != nil {
@@ -879,7 +895,7 @@ func (h *HandlerManager) soloSavingsAddFunds(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to save your transaction", http.StatusInternalServerError)
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -916,7 +932,7 @@ func (h *HandlerManager) familySavingsAddFunds(w http.ResponseWriter, r *http.Re
 
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to save your transaction", http.StatusInternalServerError)
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -953,7 +969,7 @@ func (h *HandlerManager) targetSavingsAddFunds(w http.ResponseWriter, r *http.Re
 
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to save your transaction", http.StatusInternalServerError)
-		return 
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -978,11 +994,11 @@ func (h *HandlerManager) soloSavingsGetHandler(w http.ResponseWriter, r *http.Re
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"Information": savingsInformation,
-		"Balance":     humanize.Comma(int64(savingsInformation.Balance)),
-		"csrfToken":   csrf.Token(r),
-		"ReferenceNumber": h.generatePaymentUUID(),
-		"PublicKey": h.paystackPublicKey,
+		"Information":       savingsInformation,
+		"Balance":           humanize.Comma(int64(savingsInformation.Balance)),
+		"csrfToken":         csrf.Token(r),
+		"ReferenceNumber":   h.generatePaymentUUID(),
+		"PublicKey":         h.paystackPublicKey,
 		"HasPendingPayment": savingsInformation.HasPendingPayment,
 	})
 
@@ -1008,7 +1024,7 @@ func (h *HandlerManager) targetSavingsGetHandler(w http.ResponseWriter, r *http.
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"Information": targetSavingsInformation,
+		"Information":    targetSavingsInformation,
 		csrf.TemplateTag: csrf.TemplateField(r),
 	})
 
@@ -1027,7 +1043,6 @@ func (h *HandlerManager) targetSavingsPostHandler(w http.ResponseWriter, r *http
 
 	// r.ParseForm()
 
-	
 }
 
 func (h *HandlerManager) thriftGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -1172,7 +1187,7 @@ func (h *HandlerManager) adminHomeGetHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		log.Printf("error %q from url %q", err, r.URL.Path)
-		return 
+		return
 	}
 
 	// TODO: check that the user is an admin while getting their sessionCookie
@@ -1180,9 +1195,9 @@ func (h *HandlerManager) adminHomeGetHandler(w http.ResponseWriter, r *http.Requ
 	tmpl := template.Must(template.ParseFiles(templateFiles...))
 
 	err = tmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"LoanRequests": information.LoanRequests,
+		"LoanRequests":        information.LoanRequests,
 		"InvestmentsRequests": information.InvestmentsRequests,
-		"WithdrawalRequests": information.WithdrawalRequests,
+		"WithdrawalRequests":  information.WithdrawalRequests,
 	})
 
 	if err != nil {
@@ -1288,12 +1303,12 @@ func (h *HandlerManager) logout(w http.ResponseWriter, r *http.Request) {
 
 // generates UUIDs for payment related purposes
 func (h *HandlerManager) generatePaymentUUID() uuid.UUID {
-	
-// This is the better solution, but we can use the less well engineered one for now
-// generate a UUID, check the database that it doesn't already exist
-// then return it if it doesn't, if it does, start again
 
-// There's an edge case here, it's hard to hit, but there's a possible race condition on the UUID and check thing, so a lock would be the actually totally correct solution. However, since it's an almost impossible edge case, it'll just be overengineering
+	// This is the better solution, but we can use the less well engineered one for now
+	// generate a UUID, check the database that it doesn't already exist
+	// then return it if it doesn't, if it does, start again
+
+	// There's an edge case here, it's hard to hit, but there's a possible race condition on the UUID and check thing, so a lock would be the actually totally correct solution. However, since it's an almost impossible edge case, it'll just be overengineering
 
 	return uuid.New()
 }
