@@ -6,7 +6,6 @@ import (
 	"crypto/sha512"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -49,9 +48,9 @@ func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *h
 		log.Printf("an error occured while trying to read body %s", err)
 	}
 
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyAsBytes))
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyAsBytes))
 
-	isValidMac := validateMAC(bodyAsBytes, []byte(paystackSignature), []byte("secret_key"))
+	isValidMac := validateMAC(bodyAsBytes, []byte(paystackSignature), []byte(h.paystackSecretKey))
 	if !isValidMac {
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -59,7 +58,7 @@ func (h *HandlerManager) paystackVerificationWebhook(w http.ResponseWriter, r *h
 
 	var jsonBody PaystackGenericData
 	err = json.NewDecoder(r.Body).Decode(&jsonBody)
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyAsBytes))
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyAsBytes))
 
 	if err != nil {
 		log.Printf("error while trying to decode data %s", err)
